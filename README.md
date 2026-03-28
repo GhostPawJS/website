@@ -36,11 +36,11 @@ await scaffold('./my-site', { name: 'Acme', url: 'https://acme.com' });
 
 // Build to dist/
 const result = await buildSite('./my-site');
-console.log(result.pageCount); // 7
+console.log(result.pages.length); // 7
 
 // Check fitness across all 19 analyzers
 const report = await api.read.fitness('./my-site');
-console.log(report.overallScore, report.topIssues);
+console.log(report.overall); // 85
 ```
 
 See [docs/HUMAN.md](docs/HUMAN.md) for the full direct-API reference.

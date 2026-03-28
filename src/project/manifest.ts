@@ -1,4 +1,6 @@
+import { stat } from 'node:fs/promises';
 import { isSiteError } from '../errors.ts';
+import { hashContent } from '../fs/hash_file.ts';
 import { readFile } from '../fs/read_file.ts';
 import { writeFile } from '../fs/write_file.ts';
 import type { BuildManifest } from '../types.ts';
@@ -6,7 +8,28 @@ import type { BuildManifest } from '../types.ts';
 const MANIFEST_VERSION = 1 as const;
 
 export function emptyManifest(): BuildManifest {
-	return { version: MANIFEST_VERSION, timestamp: Date.now(), pages: {} };
+	return { version: MANIFEST_VERSION, timestamp: Date.now(), sourceFingerprint: '', pages: {} };
+}
+
+/**
+ * Compute a fingerprint for the template + data source files.
+ * Sorts paths for stability, then hashes "path:mtime\n" pairs.
+ * A change to any template or data file changes this value.
+ */
+export async function computeSourceFingerprint(filePaths: string[]): Promise<string> {
+	const sorted = [...filePaths].sort();
+	const parts: string[] = [];
+	for (const p of sorted) {
+		let mtime = 0;
+		try {
+			const s = await stat(p);
+			mtime = s.mtimeMs;
+		} catch {
+			// Missing file contributes mtime=0; still included so additions are detected.
+		}
+		parts.push(`${p}:${mtime}`);
+	}
+	return hashContent(parts.join('\n'));
 }
 
 /**

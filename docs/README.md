@@ -16,3 +16,9 @@ The source of truth for the runtime surface lives in code under `src/`. These do
 | [entities/CONTENT.md](entities/CONTENT.md) | Pages: frontmatter schema, collections, URL routing, `_index` pages |
 | [entities/TEMPLATES.md](entities/TEMPLATES.md) | Templates: Handlebars syntax, layouts, partials, building blocks, auto-injected Schema.org |
 | [entities/FITNESS.md](entities/FITNESS.md) | Fitness system: 19 analyzers, tier structure, scoring, issue format, history |
+
+## Design reference
+
+| Document | What it covers |
+|----------|---------------|
+| [CONCEPT.md](CONCEPT.md) | Full system design: content model, build pipeline, fitness architecture, API surface, language kits |

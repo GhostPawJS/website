@@ -126,6 +126,12 @@ export interface ManifestEntry {
 export interface BuildManifest {
 	version: 1;
 	timestamp: number;
+	/**
+	 * SHA-256 of all template + data file paths and mtimes (sorted).
+	 * Changes when any template or data file is added, removed, or modified.
+	 * A mismatch triggers a full rebuild even in incremental mode.
+	 */
+	sourceFingerprint: string;
 	pages: Record<string, ManifestEntry>;
 }
 
@@ -135,6 +141,8 @@ export interface BuildManifest {
 
 export interface BuildResult {
 	pages: RenderedPage[];
+	/** Number of pages skipped (not re-rendered) in an incremental build. */
+	skipped: number;
 	manifest: BuildManifest;
 	/** Fitness report — null until fitness() is called separately. */
 	fitness: null;

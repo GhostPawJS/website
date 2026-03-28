@@ -36,7 +36,10 @@
 		"prepublishOnly": "npm run check && npm run build",
 		"release:patch": "npm version patch && git push && git push --tags",
 		"release:minor": "npm version minor && git push && git push --tags",
-		"release:major": "npm version major && git push && git push --tags"
+		"release:major": "npm version major && git push && git push --tags",
+		"demo:build": "node scripts/build_demo.mjs",
+		"demo:watch": "node scripts/build_demo.mjs --watch",
+		"demo:serve": "node scripts/serve_demo.mjs"
 	},
 	"engines": {
 		"node": ">=24"
@@ -94,6 +97,12 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.4.4",
 		"@types/node": "^25.3.0",
+		"buffer": "^6.0.3",
+		"events": "^3.3.0",
+		"memfs": "^4.57.1",
+		"path-browserify": "^1.0.1",
+		"playwright": "^1.58.2",
+		"preact": "^10.29.0",
 		"tsup": "^8.4.0",
 		"typescript": "^5.9.3"
 	}

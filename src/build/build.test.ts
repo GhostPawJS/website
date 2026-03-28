@@ -6,7 +6,7 @@ import { isSiteError } from '../errors.ts';
 import { readFile } from '../fs/read_file.ts';
 import { writeFile } from '../fs/write_file.ts';
 import { withTmpDir } from '../test_utils.ts';
-import type { SiteConfig } from '../types.ts';
+import type { BuildManifest, SiteConfig } from '../types.ts';
 import { build } from './build.ts';
 import { cleanDist } from './clean.ts';
 import { discoverFiles } from './discover.ts';
@@ -288,6 +288,127 @@ describe('build — end-to-end', () => {
 				() => build(dir),
 				(err: unknown) => isSiteError(err) && err.code === 'not_found',
 			);
+		});
+	});
+
+	it('build result includes skipped=0 for a full build', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Skip Test', url: 'https://skip.com' });
+			const result = await build(dir);
+			assert.equal(result.skipped, 0);
+		});
+	});
+});
+
+// ---------------------------------------------------------------------------
+// build — incremental
+// ---------------------------------------------------------------------------
+
+describe('build — incremental', () => {
+	it('no prior manifest → behaves like full build, writes manifest with fingerprint', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Inc', url: 'https://inc.com' });
+			const result = await build(dir, { incremental: true });
+			assert.ok(result.pages.length >= 2, 'pages rendered');
+			assert.equal(result.skipped, 0, 'nothing to skip on first run');
+			const raw = await readFile(join(dir, '.build-manifest.json'));
+			const manifest: BuildManifest = JSON.parse(raw);
+			assert.ok(manifest.sourceFingerprint.length > 0, 'fingerprint stored');
+		});
+	});
+
+	it('second build with no changes skips all pages', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Inc2', url: 'https://inc2.com' });
+			const first = await build(dir, { incremental: true });
+			const second = await build(dir, { incremental: true });
+			assert.equal(second.pages.length, 0, 'no pages re-rendered');
+			assert.equal(second.skipped, first.pages.length, 'all pages skipped');
+		});
+	});
+
+	it('re-renders only changed content files', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Inc3', url: 'https://inc3.com' });
+			await build(dir, { incremental: true });
+
+			// Modify one content file — bump its mtime
+			const aboutPath = join(dir, 'content', 'about.md');
+			const original = await readFile(aboutPath);
+			await writeFile(aboutPath, `${original}\n\nExtra paragraph added.`);
+
+			const second = await build(dir, { incremental: true });
+			assert.equal(second.pages.length, 1, 'only about re-rendered');
+			assert.equal(second.pages[0]?.url, '/about/', 'correct page re-rendered');
+			assert.ok(second.skipped > 0, 'other pages skipped');
+		});
+	});
+
+	it('full rebuild when a template changes', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Inc4', url: 'https://inc4.com' });
+			const first = await build(dir, { incremental: true });
+
+			// Touch a template file
+			const basePath = join(dir, 'templates', 'base.html');
+			const src = await readFile(basePath);
+			await writeFile(basePath, `${src}<!-- touched -->`);
+
+			const second = await build(dir, { incremental: true });
+			assert.equal(second.skipped, 0, 'no pages skipped — full rebuild');
+			assert.equal(second.pages.length, first.pages.length, 'all pages re-rendered');
+		});
+	});
+
+	it('full rebuild when a data file changes', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Inc5', url: 'https://inc5.com' });
+			const first = await build(dir, { incremental: true });
+
+			// Modify the nav data file
+			const navPath = join(dir, 'data', 'nav.json');
+			const nav = JSON.parse(await readFile(navPath)) as unknown[];
+			await writeFile(navPath, JSON.stringify([...nav, { label: 'Extra', href: '/extra/' }]));
+
+			const second = await build(dir, { incremental: true });
+			assert.equal(second.skipped, 0, 'full rebuild triggered by data change');
+			assert.equal(second.pages.length, first.pages.length, 'all pages re-rendered');
+		});
+	});
+
+	it('removes stale dist page when source is deleted', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'Inc6', url: 'https://inc6.com' });
+			// Add an extra page
+			await writeFile(
+				join(dir, 'content', 'extra.md'),
+				'---\ntitle: Extra\nlayout: page.html\n---\n\nContent.',
+			);
+			await build(dir, { incremental: true });
+			// Verify extra page was built
+			const extraBefore = await readFile(join(dir, 'dist', 'extra', 'index.html'));
+			assert.ok(extraBefore.length > 0, 'extra page built');
+
+			// Delete source, rebuild incrementally — stale dist file should go
+			const { rm } = await import('node:fs/promises');
+			await rm(join(dir, 'content', 'extra.md'));
+			await build(dir, { incremental: true });
+
+			await assert.rejects(
+				() => readFile(join(dir, 'dist', 'extra', 'index.html')),
+				(e: unknown) => isSiteError(e),
+				'stale dist file removed',
+			);
+		});
+	});
+
+	it('non-incremental build always renders all pages', async () => {
+		await withTmpDir(async (dir) => {
+			await scaffold(dir, { name: 'NonInc', url: 'https://noninc.com' });
+			await build(dir); // first build
+			const second = await build(dir); // no incremental flag
+			assert.equal(second.skipped, 0, 'all pages rendered in full mode');
+			assert.ok(second.pages.length >= 2);
 		});
 	});
 });

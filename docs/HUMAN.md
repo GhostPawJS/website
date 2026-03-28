@@ -34,17 +34,18 @@ api.read.listPages(dir, filter?)     // → PageSummary[]
 api.read.getPage(dir, path)          // → PageDetail  (includes rendered HTML)
 ```
 
-`filter` accepts `{ tag?, template?, slug? }`. `slug` is matched as a pattern.
+`filter` accepts `{ collection?, url? }`. `url` is matched as a prefix.
 
 `PageSummary` shape:
 
 ```ts
 {
+  path: string,           // relative path from project root, e.g. "content/blog/post.md"
   url: string,
-  slug: string,
   collection: string | null,
   frontmatter: PageFrontmatter,
   wordCount: number,
+  readability: ReadabilityScores,
 }
 ```
 
@@ -105,11 +106,11 @@ api.read.fitnessHistory(dir)         // → FitnessHistoryEntry[]
 
 ```ts
 {
-  overallScore: number,              // 0–100
-  timestamp: string,
+  overall: number,                   // 0–100
+  timestamp: number,                 // Unix ms
   dimensions: Record<string, DimensionScore>,
-  topIssues: Issue[],
-  weakestPages: PageScore[],
+  pages: Record<string, PageScore>,
+  clusters: TopicalCluster[],
   cannibalization: CannibalizationPair[],
 }
 ```
@@ -181,10 +182,12 @@ api.write.writePersona(dir, content)    // replaces PERSONA.md
 
 ```ts
 api.build.build(dir, opts?)
-// → { pageCount: number, assetCount: number, duration: number }
+// → BuildResult: { pages: RenderedPage[], skipped: number, manifest: BuildManifest, fitness: null, duration: number }
 ```
 
-Discovers all pages, renders them via the template system, copies assets to `dist/`, and writes `sitemap.xml` and `robots.txt`.
+`opts` accepts `{ skipClean?: boolean, incremental?: boolean }`. With `incremental: true`, only pages whose source file changed since the last build are re-rendered — the `skipped` count reflects pages that were left untouched.
+
+Discovers all pages, renders them via the template system, copies assets to `dist/`, and writes `sitemap.xml`.
 
 ### Scaffold
 

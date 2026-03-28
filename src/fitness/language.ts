@@ -78,6 +78,37 @@ también tanto te tenía tu tus un una unas uno unos vosotras vosotros vuestra v
 		.split(/\s+/),
 );
 
+const IT_STOPWORDS = new Set(
+	`a al all alla alle allo anche avere avuto che chi ci col con cosa cui da dal dalla dalle
+dallo degli dei del della delle dello di dove e ed era essere fatto fin fra gli ha hai hanno
+ho i il in invece io l la le lei li lo loro lu ma me mi mia mio ne nel nella nelle nello
+noi non nostra nostro o per poi quando questo qui si siamo sia siano siate siete solo sono
+sua sue sui sul sulla sulle sullo suo te tua tue tuo un una uno vi voi`
+		.trim()
+		.split(/\s+/),
+);
+
+const PT_STOPWORDS = new Set(
+	`a ao aos aquela aquelas aquele aqueles aquilo as até com como da das de dela delas dele
+deles depois do dos e ela elas ele eles em era eram esse essa esses essas esta estas este
+estes eu foi fomos foram há isso isto já lhe lhes mas me meu minha minhas meus na nas
+nem no nos nossa nossas nosso nossos num numa numas nuns o os ou para pela pelas pelo pelos
+por qual quando que quem se seu seus sua suas te tem têm teu tuas tu um uma uns umas você
+vocês vos`
+		.trim()
+		.split(/\s+/),
+);
+
+const NL_STOPWORDS = new Set(
+	`aan al alle als altijd am andere ben bij daar dan dat de die dit door dus een en er ga
+gaan geen heeft hem het hier hij hoe hun ik in is jaar je jij jullie kan maar me meer men
+met mij mijn naar niet nog nu of om omhoog onder onze ook op over per toch u uit van veel
+verder via voor wat we welke wie wij wil word worden wordt zal ze zei zelf zelfs zij zijn zo
+zou`
+		.trim()
+		.split(/\s+/),
+);
+
 // ---------------------------------------------------------------------------
 // Syllable counter (English heuristic, ~90% accuracy)
 // ---------------------------------------------------------------------------
@@ -263,6 +294,27 @@ pionero innovativo empoderar potenciar`
 		.split(/\s+/),
 );
 
+const IT_SLOP_WORDS = new Set(
+	`innovativo rivoluzionario olistico sinergico trasformativo fondamentale cruciale decisivo
+pionieristico potenziare valorizzare ottimizzare`
+		.trim()
+		.split(/\s+/),
+);
+
+const PT_SLOP_WORDS = new Set(
+	`inovador revolucionário holístico sinérgico transformativo fundamental crucial decisivo
+pioneiro capacitar potencializar otimizar`
+		.trim()
+		.split(/\s+/),
+);
+
+const NL_SLOP_WORDS = new Set(
+	`innovatief revolutionair holistisch synergetisch transformatief fundamenteel cruciaal beslissend
+baanbrekend toonaangevend versterken optimaliseren`
+		.trim()
+		.split(/\s+/),
+);
+
 // ---------------------------------------------------------------------------
 // Hedging phrases (AI-style qualifiers)
 // ---------------------------------------------------------------------------
@@ -314,6 +366,35 @@ const ES_HEDGING: readonly string[] = [
 	'no hay que olvidar',
 ];
 
+const IT_HEDGING: readonly string[] = [
+	'è importante notare',
+	'vale la pena sottolineare',
+	'in conclusione',
+	'in sintesi',
+	'è inutile dire',
+	'non bisogna dimenticare',
+	'come è noto',
+];
+
+const PT_HEDGING: readonly string[] = [
+	'é importante notar',
+	'vale ressaltar',
+	'em conclusão',
+	'em resumo',
+	'é desnecessário dizer',
+	'não se pode negar',
+	'como todos sabem',
+];
+
+const NL_HEDGING: readonly string[] = [
+	'het is belangrijk op te merken',
+	'het is de moeite waard te vermelden',
+	'tot slot',
+	'samenvattend',
+	'het spreekt voor zich',
+	'niet te vergeten',
+];
+
 // ---------------------------------------------------------------------------
 // Transition words (sentence-initial overuse patterns)
 // ---------------------------------------------------------------------------
@@ -343,6 +424,27 @@ en revanche par ailleurs notamment`
 const ES_TRANSITIONS = new Set(
 	`además sin embargo no obstante por lo tanto por consiguiente así pues
 en cambio por otra parte especialmente`
+		.trim()
+		.split(/\s+/),
+);
+
+const IT_TRANSITIONS = new Set(
+	`inoltre tuttavia ciononostante pertanto quindi dunque conseguentemente
+nel frattempo invece particolarmente`
+		.trim()
+		.split(/\s+/),
+);
+
+const PT_TRANSITIONS = new Set(
+	`além disso no entanto contudo portanto consequentemente assim enquanto
+por outro lado nomeadamente particularmente`
+		.trim()
+		.split(/\s+/),
+);
+
+const NL_TRANSITIONS = new Set(
+	`bovendien echter desondanks daarom bijgevolg dus ondertussen
+daarentegen met name met name`
 		.trim()
 		.split(/\s+/),
 );
@@ -397,6 +499,24 @@ export function getLanguageKit(langCode: string): LanguageKit {
 			aiSlopWords = ES_SLOP_WORDS;
 			hedgingPhrases = ES_HEDGING;
 			transitionWords = ES_TRANSITIONS;
+			break;
+		case 'it':
+			stopwords = IT_STOPWORDS;
+			aiSlopWords = IT_SLOP_WORDS;
+			hedgingPhrases = IT_HEDGING;
+			transitionWords = IT_TRANSITIONS;
+			break;
+		case 'pt':
+			stopwords = PT_STOPWORDS;
+			aiSlopWords = PT_SLOP_WORDS;
+			hedgingPhrases = PT_HEDGING;
+			transitionWords = PT_TRANSITIONS;
+			break;
+		case 'nl':
+			stopwords = NL_STOPWORDS;
+			aiSlopWords = NL_SLOP_WORDS;
+			hedgingPhrases = NL_HEDGING;
+			transitionWords = NL_TRANSITIONS;
 			break;
 		default:
 			stopwords = EN_STOPWORDS;

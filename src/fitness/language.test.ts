@@ -193,6 +193,9 @@ describe('getLanguageKit — aiSlopWords, hedgingPhrases, transitionWords', () =
 		assert.equal(getLanguageKit('de').code, 'de');
 		assert.equal(getLanguageKit('fr').code, 'fr');
 		assert.equal(getLanguageKit('es').code, 'es');
+		assert.equal(getLanguageKit('it').code, 'it');
+		assert.equal(getLanguageKit('pt').code, 'pt');
+		assert.equal(getLanguageKit('nl').code, 'nl');
 	});
 
 	it('unknown language falls back to EN aiSlopWords', () => {
@@ -208,6 +211,119 @@ describe('getLanguageKit — aiSlopWords, hedgingPhrases, transitionWords', () =
 				!kit.transitionWords.has(word),
 				`"${word}" appears in both aiSlopWords and transitionWords`,
 			);
+		}
+	});
+
+	it('IT kit has non-empty aiSlopWords, hedgingPhrases, transitionWords', () => {
+		const kit = getLanguageKit('it');
+		assert.ok(kit.aiSlopWords.size > 0);
+		assert.ok(kit.hedgingPhrases.length > 0);
+		assert.ok(kit.transitionWords.size > 0);
+	});
+
+	it('IT aiSlopWords includes known Italian AI overuse words', () => {
+		const kit = getLanguageKit('it');
+		assert.ok(kit.aiSlopWords.has('innovativo'));
+		assert.ok(kit.aiSlopWords.has('olistico'));
+	});
+
+	it('IT hedgingPhrases includes known Italian hedging patterns', () => {
+		const kit = getLanguageKit('it');
+		assert.ok(kit.hedgingPhrases.includes('è importante notare'));
+		assert.ok(kit.hedgingPhrases.includes('in conclusione'));
+	});
+
+	it('IT transitionWords includes known Italian transitions', () => {
+		const kit = getLanguageKit('it');
+		assert.ok(kit.transitionWords.has('inoltre'));
+		assert.ok(kit.transitionWords.has('tuttavia'));
+	});
+
+	it('IT tokenize filters Italian stopwords', () => {
+		const kit = getLanguageKit('it');
+		const tokens = kit.tokenize('il gatto mangia velocemente nel giardino');
+		assert.ok(!tokens.includes('il'));
+		assert.ok(!tokens.includes('nel'));
+		assert.ok(tokens.includes('gatto'));
+		assert.ok(tokens.includes('mangia'));
+	});
+
+	it('PT kit has non-empty aiSlopWords, hedgingPhrases, transitionWords', () => {
+		const kit = getLanguageKit('pt');
+		assert.ok(kit.aiSlopWords.size > 0);
+		assert.ok(kit.hedgingPhrases.length > 0);
+		assert.ok(kit.transitionWords.size > 0);
+	});
+
+	it('PT aiSlopWords includes known Portuguese AI overuse words', () => {
+		const kit = getLanguageKit('pt');
+		assert.ok(kit.aiSlopWords.has('inovador'));
+		assert.ok(kit.aiSlopWords.has('holístico'));
+	});
+
+	it('PT hedgingPhrases includes known Portuguese hedging patterns', () => {
+		const kit = getLanguageKit('pt');
+		assert.ok(kit.hedgingPhrases.includes('é importante notar'));
+		assert.ok(kit.hedgingPhrases.includes('em conclusão'));
+	});
+
+	it('PT transitionWords includes known Portuguese transitions', () => {
+		const kit = getLanguageKit('pt');
+		assert.ok(kit.transitionWords.has('portanto'));
+		assert.ok(kit.transitionWords.has('contudo'));
+	});
+
+	it('PT tokenize filters Portuguese stopwords', () => {
+		const kit = getLanguageKit('pt');
+		const tokens = kit.tokenize('o gato come rapidamente no jardim');
+		assert.ok(!tokens.includes('o'));
+		assert.ok(!tokens.includes('no'));
+		assert.ok(tokens.includes('gato'));
+		assert.ok(tokens.includes('come'));
+	});
+
+	it('NL kit has non-empty aiSlopWords, hedgingPhrases, transitionWords', () => {
+		const kit = getLanguageKit('nl');
+		assert.ok(kit.aiSlopWords.size > 0);
+		assert.ok(kit.hedgingPhrases.length > 0);
+		assert.ok(kit.transitionWords.size > 0);
+	});
+
+	it('NL aiSlopWords includes known Dutch AI overuse words', () => {
+		const kit = getLanguageKit('nl');
+		assert.ok(kit.aiSlopWords.has('innovatief'));
+		assert.ok(kit.aiSlopWords.has('baanbrekend'));
+	});
+
+	it('NL hedgingPhrases includes known Dutch hedging patterns', () => {
+		const kit = getLanguageKit('nl');
+		assert.ok(kit.hedgingPhrases.includes('het is belangrijk op te merken'));
+		assert.ok(kit.hedgingPhrases.includes('samenvattend'));
+	});
+
+	it('NL transitionWords includes known Dutch transitions', () => {
+		const kit = getLanguageKit('nl');
+		assert.ok(kit.transitionWords.has('bovendien'));
+		assert.ok(kit.transitionWords.has('echter'));
+	});
+
+	it('NL tokenize filters Dutch stopwords', () => {
+		const kit = getLanguageKit('nl');
+		const tokens = kit.tokenize('de kat eet snel in de tuin');
+		assert.ok(!tokens.includes('de'));
+		assert.ok(tokens.includes('kat'));
+		assert.ok(tokens.includes('eet'));
+	});
+
+	it('IT/PT/NL readability returns valid numeric scores', () => {
+		const text = 'De kat zit op de mat. Dit is een zin. Nog een korte zin hier.';
+		for (const code of ['it', 'pt', 'nl']) {
+			const kit = getLanguageKit(code);
+			const stats = kit.textStats(text);
+			const r = kit.readability(stats);
+			assert.ok(typeof r.fleschReadingEase === 'number', `${code} fleschReadingEase`);
+			assert.ok(typeof r.fleschKincaidGrade === 'number', `${code} fleschKincaidGrade`);
+			assert.ok(typeof r.gunningFog === 'number', `${code} gunningFog`);
 		}
 	});
 });
