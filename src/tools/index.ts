@@ -1,44 +1,33 @@
-export type { CalculateToolData, CalculateToolResult } from './calculate_tool.ts';
-export { calculateTool, calculateToolHandler } from './calculate_tool.ts';
-export type { ReviewHistoryToolData, ReviewHistoryToolResult } from './review_history_tool.ts';
-export { reviewHistoryTool, reviewHistoryToolHandler } from './review_history_tool.ts';
+// ---------------------------------------------------------------------------
+// Tools public API
+// ---------------------------------------------------------------------------
+
+export type { SiteBuildInput } from './site_build.ts';
+export { siteBuild } from './site_build.ts';
+export type { CheckSummary, SiteCheckInput } from './site_check.ts';
+export { siteCheck } from './site_check.ts';
+export type { PlanSummary, SitePlanInput } from './site_plan.ts';
+export { sitePlan } from './site_plan.ts';
+export type { SiteReadInput } from './site_read.ts';
+export { siteRead } from './site_read.ts';
+export type { SiteWriteInput } from './site_write.ts';
+export { siteWrite } from './site_write.ts';
 export type {
-	CalcToolDefinition,
 	JsonSchema,
-	JsonSchemaType,
-	ToolDefinitionRegistry,
-	ToolSideEffects,
-} from './tool_metadata.ts';
-export {
-	arraySchema,
-	booleanSchema,
-	defineCalcTool,
-	enumSchema,
-	integerSchema,
-	numberSchema,
-	objectSchema,
-	stringSchema,
-} from './tool_metadata.ts';
-export { calculateToolName, clearHistoryToolName, reviewHistoryToolName } from './tool_names.ts';
-export { calcTools, getCalcToolByName, listCalcToolDefinitions } from './tool_registry.ts';
-export type {
-	ToolBaseResult,
-	ToolClarificationCode,
-	ToolErrorCode,
-	ToolErrorKind,
-	ToolFailure,
-	ToolNextStepHint,
-	ToolNextStepHintKind,
-	ToolOutcomeKind,
+	ToolDef,
+	ToolError,
+	ToolNeedsClarification,
+	ToolNoOp,
 	ToolResult,
 	ToolSuccess,
-	ToolWarning,
-	ToolWarningCode,
-} from './tool_types.ts';
-export {
-	toolFailure,
-	toolNeedsClarification,
-	toolNoOp,
-	toolSuccess,
-	toolWarning,
-} from './tool_types.ts';
+} from './types.ts';
+
+import { siteBuild } from './site_build.ts';
+import { siteCheck } from './site_check.ts';
+import { sitePlan } from './site_plan.ts';
+import { siteRead } from './site_read.ts';
+import { siteWrite } from './site_write.ts';
+import type { ToolDef } from './types.ts';
+
+/** All tools in registration order. Pass to an MCP server or function-calling adapter. */
+export const TOOLS: readonly ToolDef[] = [siteRead, siteWrite, siteBuild, siteCheck, sitePlan];

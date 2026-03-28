@@ -1,139 +1,201 @@
-# @ghostpaw/template
+# @ghostpaw/website
 
-[![npm](https://img.shields.io/npm/v/@ghostpaw/template)](https://www.npmjs.com/package/@ghostpaw/template)
-[![node](https://img.shields.io/node/v/@ghostpaw/template)](https://nodejs.org)
-[![license](https://img.shields.io/npm/l/@ghostpaw/template)](LICENSE)
-[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
+[![npm](https://img.shields.io/npm/v/@ghostpaw/website)](https://www.npmjs.com/package/@ghostpaw/website)
+[![node](https://img.shields.io/node/v/@ghostpaw/website)](https://nodejs.org)
+[![license](https://img.shields.io/npm/l/@ghostpaw/website)](LICENSE)
+[![dependencies](https://img.shields.io/badge/dependencies-1-brightgreen)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Live Demo](https://img.shields.io/badge/demo-live-06d6a0?style=flat&logo=github)](https://ghostpawjs.github.io/template)
+[![Live Demo](https://img.shields.io/badge/demo-live-06d6a0?style=flat&logo=github)](https://ghostpawjs.github.io/website)
 
-TODO: one-line description of what this package does.
-
-> This is the GhostPaw template repository. The calculator domain below is toy
-> content — a working example to copy from and replace. See
-> [TEMPLATE.md](TEMPLATE.md) for a full map of what to keep, what to replace,
-> and a step-by-step checklist.
+A lean static site builder where the fitness system is the product: 19 analyzers across 4 tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk.
 
 ## Install
 
 ```bash
-npm install @ghostpaw/template
+npm install @ghostpaw/website
 ```
 
-Requires **Node.js 24+** (uses the built-in `node:sqlite` module).
+Requires **Node.js 22+** (uses `--experimental-strip-types`).
 
 ## Quick Start
 
 ```ts
-import { DatabaseSync } from 'node:sqlite';
-import { initCalcTables, read, write } from '@ghostpaw/template';
+import { scaffold, build, api } from '@ghostpaw/website';
 
-const db = new DatabaseSync(':memory:');
-initCalcTables(db);
+// Create a working site in seconds
+await scaffold('./my-site');
 
-const r1 = write.add(db, 10, 5);
-const r2 = write.multiply(db, r1.result, 2);
+// Build it
+await build('./my-site');
 
-const history = read.listHistory(db);
+// Check fitness across all 19 analyzers
+const report = await api.read.fitness('./my-site');
+console.log(report.score, report.issues);
 ```
 
 ## Two Audiences
 
 ### Human developers
 
-Use the `read` and `write` namespaces for direct-code access to every domain
-operation:
+Use the `api.read`, `api.write`, and `api.build` namespaces for direct programmatic access to every site operation:
 
 ```ts
-import { read, write } from '@ghostpaw/template';
+import { api } from '@ghostpaw/website';
 
-write.add(db, 3, 4);
-write.divide(db, 10, 2);
+// Read
+const pages = await api.read.listPages('./my-site');
+const page  = await api.read.getPage('./my-site', 'about');
+const score = await api.read.fitnessPage('./my-site', 'about');
 
-const history = read.listHistory(db);
-const last = read.getLastResult(db);
+// Write
+await api.write.writePage('./my-site', 'about', { title: 'About Us', body: '...' });
+
+// Build
+await api.build.build('./my-site');
+await api.build.preview('./my-site');
 ```
 
-See [HUMAN.md](docs/HUMAN.md) for the full human-facing guide.
+See [docs/HUMAN.md](docs/HUMAN.md) for the full human-facing guide.
 
 ### LLM agents
 
-Use the `tools`, `skills`, and `soul` namespaces for a structured runtime
-surface designed to minimise LLM cognitive load:
+Use the `tools`, `skills`, and `soul` namespaces for a structured runtime surface designed to minimise LLM cognitive load:
 
 ```ts
-import { tools, skills, soul } from '@ghostpaw/template';
+import { tools, skills, soul } from '@ghostpaw/website';
 
 // Intent-shaped tools with JSON Schema inputs and structured results
-const allTools = tools.calcTools;
-const calcTool = tools.getCalcToolByName('calculate')!;
-const result = calcTool.handler(db, { a: 3, b: 4, operator: '+' });
+const allTools = tools.TOOLS;
 
 // Reusable workflow skills for common multi-step scenarios
-const allSkills = skills.listCalcSkills();
+const allSkills = skills.SKILLS;
 
 // Thinking foundation for system prompts
-const prompt = soul.renderCalcSoulPromptFoundation();
+const prompt = soul.siteBuilderPersona.renderSoulPromptFoundation();
 ```
 
-Every tool returns a discriminated result with `outcome: 'success' | 'no_op' |
-'needs_clarification' | 'error'`, structured data, next-step hints, and
-actionable recovery advice.
+Every tool returns a discriminated result with `outcome: 'success' | 'no_op' | 'needs_clarification' | 'error'`, structured data, next-step hints, and actionable recovery advice.
 
-See [LLM.md](docs/LLM.md) for the full AI-facing guide.
+See [docs/LLM.md](docs/LLM.md) for the full AI-facing guide.
 
 ## Tools
 
-| Tool             | What it does                                    |
-|------------------|-------------------------------------------------|
-| `calculate`      | Perform an arithmetic operation, store it       |
-| `review_history` | List recent calculations, newest-first          |
+| Tool          | What it does                                                             |
+|---------------|--------------------------------------------------------------------------|
+| `site_read`   | Inspect pages, templates, data, config, and fitness reports              |
+| `site_write`  | Create, update, or delete content, templates, data, and assets           |
+| `site_build`  | Build, preview, serve, stop, clean, or scaffold a site                   |
+| `site_check`  | Run the fitness system; returns prioritised issues with fix suggestions   |
+| `site_plan`   | Dry-run changes and preview the fitness delta before writing             |
+
+## Skills
+
+| Skill                        | What it guides                                                  |
+|------------------------------|-----------------------------------------------------------------|
+| `create-page-well`           | End-to-end page creation with correct frontmatter and structure |
+| `seo-checklist`              | Systematic on-page SEO review and remediation                   |
+| `geo-optimization`           | Geographic and local SEO signal optimisation                    |
+| `template-composition`       | Building and wiring reusable layout templates                   |
+| `site-launch-checklist`      | Pre-launch fitness and configuration verification               |
+| `content-cannibalization`    | Identifying and resolving keyword overlap across pages          |
+| `search-console-workflow`    | Ingesting GSC data to drive Tier 4 fitness analysis             |
+
+## Core LLM Workflow Loop
+
+The recommended agent loop is: **plan, write, check**.
+
+```ts
+import { tools } from '@ghostpaw/website';
+
+const { siteRead, siteWrite, siteBuild, siteCheck, sitePlan } = tools;
+
+// 1. Simulate — preview fitness impact before touching the site
+const delta = await sitePlan.handler(site, { action: 'writePage', slug: 'services', data: draft });
+
+// 2. Apply — write the change only when the delta looks good
+await siteWrite.handler(site, { action: 'writePage', slug: 'services', data: draft });
+
+// 3. Verify — confirm fitness improved and surface any remaining issues
+const report = await siteCheck.handler(site, { tiers: ['tier1', 'tier2'] });
+```
+
+`site_plan` (simulate) → `site_write` (apply) → `site_check` (verify)
 
 ## Key Properties
 
-- **Zero runtime dependencies.** Only `node:sqlite` (built into Node 24+).
-- **Single prebundled blob.** One ESM + one CJS entry in `dist/`.
-- **Pure SQLite storage.** Bring your own `DatabaseSync` instance.
-- **Append-only history.** Operations are never modified after insertion.
-- **Additive AI runtime.** `soul` for posture, `tools` for actions, `skills`
-  for workflow guidance — all optional, all structured.
-- **Colocated tests.** Every non-type module has a colocated `.test.ts` file.
+- **Fitness-first.** 19 analyzers across 4 tiers run on every build. The score is a first-class output, not an afterthought.
+- **LLM-native.** `soul` for posture, `tools` for actions, `skills` for workflow guidance — designed for agentic use from day one.
+- **Zero-config Schema.org.** `faq.html`, `breadcrumb.html`, and `table.html` building-block templates auto-inject correct JSON-LD from frontmatter. No manual markup needed.
+- **Dry-run before write.** `site_plan` simulates any mutation and returns a fitness delta before a single file is touched.
+- **Everything is files.** `content/`, `templates/`, `assets/`, `data/`, `site.json` — no database, no admin UI, no hidden state.
+- **Multi-language ready.** Multilingual and geo analyzers are built in; no plugin required.
+- **One runtime dependency.** Only `marked` — for Markdown rendering.
+- **scaffold() in seconds.** A fully working site with correct structure in one call.
+
+## Fitness Analyzers (19 total)
+
+| Tier | Analyzers |
+|------|-----------|
+| **Tier 1** — always | `seo_meta`, `seo_structure`, `content_quality`, `images`, `links`, `social`, `sitemap_robots`, `technical` |
+| **Tier 2** — TF-IDF | `cannibalization`, `topical_clusters`, `content_tfidf` |
+| **Tier 3** — schema  | `schema_validation`, `geo`, `eeat`, `local_seo`, `multilingual`, `voice_compliance` |
+| **Tier 4** — optional | `search_console` (when GSC data is provided) |
 
 ## Package Surface
 
 ```ts
 import {
-  initCalcTables,  // schema setup
-  read,            // all query functions
-  write,           // all mutation functions
-  tools,           // LLM tool definitions + registry
-  skills,          // LLM workflow skills + registry
-  soul,            // thinking foundation for system prompts
-} from '@ghostpaw/template';
+  // Convenience re-exports
+  buildSite,
+  scaffold,
+
+  // Structured API namespaces
+  api,   // api.read — api.write — api.build
+
+  // LLM runtime
+  tools, // TOOLS array + siteRead, siteWrite, siteBuild, siteCheck, sitePlan
+  skills, // SKILLS array + 7 named skills
+  soul,  // siteBuilderPersona (with renderSoulPromptFoundation())
+
+  // Types
+  type GscData,
+  type GscRow,
+  type FitnessReport,
+  type PageScore,
+  type FitnessOptions,
+} from '@ghostpaw/website';
 ```
+
+### `api.read`
+
+`listPages`, `getPage`, `listTemplates`, `getTemplate`, `listAssets`, `getAsset`, `listData`, `getData`, `getConfig`, `getDomain`, `getPersona`, `getStructure`, `fitness`, `fitnessPage`, `fitnessHistory`
+
+### `api.write`
+
+`writePage`, `deletePage`, `writeTemplate`, `deleteTemplate`, `writeAsset`, `deleteAsset`, `writeData`, `deleteData`, `writeConfig`, `writeDomain`, `writePersona`
+
+### `api.build`
+
+`build`, `scaffold`, `preview`, `serve`, `stop`, `clean`
 
 ## Documentation
 
 | Document | Audience |
 |---|---|
-| [HUMAN.md](docs/HUMAN.md) | Human developers using the low-level `read` / `write` API |
-| [LLM.md](docs/LLM.md) | Agent builders wiring `soul`, `tools`, and `skills` into LLM systems |
-| [docs/README.md](docs/README.md) | Architecture overview and source layout |
-| [docs/entities/](docs/entities/) | Per-entity manuals with exact public API listings |
+| [docs/HUMAN.md](docs/HUMAN.md) | Human developers using the low-level `api.read` / `api.write` surface |
+| [docs/LLM.md](docs/LLM.md) | Agent builders wiring `soul`, `tools`, and `skills` into LLM systems |
 
 ## Development
 
 ```bash
 npm install
-npm test            # node:test runner
+npm test            # node:test runner (--experimental-strip-types)
 npm run typecheck   # tsc --noEmit
 npm run lint        # biome check
 npm run build       # ESM + CJS + declarations via tsup
-npm run demo:serve  # build and serve the interactive demo locally
 ```
 
-The repo is pinned to **Node 24.14.0** via `.nvmrc` / `.node-version` /
-`.tool-versions` / Volta.
+The repo is pinned to **Node 22+** via `.nvmrc` / `.node-version` / `.tool-versions` / Volta.
 
 ### Support
 

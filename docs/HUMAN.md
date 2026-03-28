@@ -1,91 +1,206 @@
-# Human Usage
-
-> This is template documentation for the calculator toy domain. Replace every
-> section below with the `read` / `write` API for your own domain.
-> See [`../TEMPLATE.md`](../TEMPLATE.md) for a full replacement guide.
+# @ghostpaw/website — Developer Reference
 
 This document is for human operators and developers using this package directly
-in code via the `read` and `write` namespaces.
+in code. If you are wiring it into an LLM agent, read [LLM.md](LLM.md) instead.
 
-If you are wiring it into an LLM agent, read [`LLM.md`](LLM.md) instead.
-Domain vocabulary lives in [`../CONCEPT.md`](../CONCEPT.md).
+## Requirements
 
-## Which Surface To Use
+- Node 22+
+- No database, no framework — everything is files on disk
 
-```ts
-import { initCalcTables, read, write } from '@ghostpaw/template';
+## Installation
+
+```sh
+npm install @ghostpaw/website
 ```
 
-Use this surface when a human is deciding what to compute, reviewing history,
-or building application logic on top of the stored operations.
-
-## Package Imports
-
-| Symbol            | Role                                             |
-|-------------------|--------------------------------------------------|
-| `initCalcTables`  | One-shot DDL — call once with your DatabaseSync  |
-| `read`            | Query namespace: `listHistory`, `getLastResult`  |
-| `write`           | Mutation namespace: `add`, `subtract`, `multiply`, `divide`, `clearHistory` |
-| `types`           | Shared TypeScript types and enums               |
-| `errors`          | Error classes and `isCalcError` guard           |
-| `CalcDb`          | Type alias for the database interface            |
-
-## Minimal Session
+## Import
 
 ```ts
-import { DatabaseSync } from 'node:sqlite';
-import { initCalcTables, read, write } from '@ghostpaw/template';
-
-const db = new DatabaseSync(':memory:');
-initCalcTables(db);
-
-// Perform calculations
-const r1 = write.add(db, 10, 5);       // { result: 15, operator: '+', ... }
-const r2 = write.multiply(db, r1.result, 2); // { result: 30, ... }
-
-// Review history
-const history = read.listHistory(db);   // [{ result: 30, ... }, { result: 15, ... }]
-const last = read.getLastResult(db);    // { result: 30, ... }
+import { api, buildSite, scaffold, SiteError, isSiteError } from '@ghostpaw/website';
 ```
 
-## Write Surface
+All runtime functionality flows through three namespaces: `api.read`, `api.write`,
+and `api.build`. Every function takes `dir: string` as its first argument — the
+root of your site on disk.
 
-| Function                  | What it does                                      |
-|---------------------------|---------------------------------------------------|
-| `write.add(db, a, b)`     | Store `a + b`                                     |
-| `write.subtract(db, a, b)`| Store `a - b`                                     |
-| `write.multiply(db, a, b)`| Store `a * b`                                     |
-| `write.divide(db, a, b)`  | Store `a / b` — throws `CalcValidationError` if `b === 0` |
-| `write.clearHistory(db)`  | Delete all operations, return count deleted       |
+---
 
-All write functions accept an optional `now` timestamp as the last argument for
-deterministic testing.
+## api.read
 
-## Read Surface
+All functions are async.
 
-| Function                        | What it returns                          |
-|---------------------------------|------------------------------------------|
-| `read.listHistory(db, options?)` | Operations ordered newest-first, up to `limit` (default 50) |
-| `read.getLastResult(db)`        | The most recent operation, or `null`     |
-
-## Error Handling
+### Pages
 
 ```ts
-import { CalcValidationError, isCalcError } from '@ghostpaw/template';
+api.read.listPages(dir, filter?)     // → PageSummary[]
+api.read.getPage(dir, path)          // → PageDetail  (includes rendered HTML)
+```
+
+`filter` accepts `{ tag?, template?, slug? }`. `slug` is matched as a pattern.
+
+### Templates
+
+```ts
+api.read.listTemplates(dir)          // → TemplateSummary[]
+api.read.getTemplate(dir, name)      // → string  (raw HTML source)
+```
+
+### Assets
+
+```ts
+api.read.listAssets(dir, filter?)    // → AssetSummary[]
+api.read.getAsset(dir, path)         // → AssetDetail  (content included for text types)
+```
+
+### Data
+
+```ts
+api.read.listData(dir)               // → DataSummary[]
+api.read.getData(dir, name)          // → unknown  (parsed JSON)
+```
+
+### Site config and identity
+
+```ts
+api.read.getConfig(dir)              // → SiteConfig
+api.read.getDomain(dir)              // → string  (DOMAIN.md content)
+api.read.getPersona(dir)             // → string  (PERSONA.md content)
+api.read.getStructure(dir)           // → SiteStructure  (URL tree with parent/child relationships)
+```
+
+### Fitness
+
+```ts
+api.read.fitness(dir, opts?)         // → FitnessReport
+api.read.fitnessPage(dir, path)      // → PageScore  (Tier 1 + Tier 3 only)
+api.read.fitnessHistory(dir)         // → FitnessHistoryEntry[]
+```
+
+`opts` accepts `{ dimensions?: string[], searchConsole? }`.
+
+#### FitnessReport shape
+
+```ts
+{
+  overall: number,
+  timestamp: string,
+  dimensions: Record<string, DimensionScore>,
+  pages: Record<string, PageScore>,
+  cannibalization: CannibalizationPair[]
+}
+```
+
+Each issue carries:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `severity` | `'error' \| 'warning' \| 'info'` | |
+| `dimension` | `string` | |
+| `code` | `string` | Stable identifier |
+| `message` | `string` | Human-readable description |
+| `page` | `string` | Affected page path |
+| `fix` | `{ file, action, field }` | Actionable pointer to the exact change needed |
+
+---
+
+## api.write
+
+### Pages
+
+```ts
+api.write.writePage(dir, path, frontmatter, markdown)
+api.write.deletePage(dir, path)
+```
+
+`path` is relative to `content/`.
+
+### Templates
+
+```ts
+api.write.writeTemplate(dir, name, html)
+api.write.deleteTemplate(dir, name)
+```
+
+### Assets
+
+```ts
+api.write.writeAsset(dir, path, content)
+api.write.deleteAsset(dir, path)
+```
+
+### Data
+
+```ts
+api.write.writeData(dir, name, json)
+api.write.deleteData(dir, name)
+```
+
+### Site config and identity
+
+```ts
+api.write.writeConfig(dir, partial)     // merges partial into site.json
+api.write.writeDomain(dir, content)     // replaces DOMAIN.md
+api.write.writePersona(dir, content)    // replaces PERSONA.md
+```
+
+---
+
+## api.build
+
+```ts
+api.build.build(dir, opts?)             // → BuildResult  (copies assets, renders all pages, writes to dist/)
+api.build.scaffold(dir, opts?)          // creates full site skeleton on disk
+api.build.preview(dir, path)            // → RenderedPage  (renders one page without writing to dist/)
+api.build.serve(dir, opts?)             // → ServeInstance  (dev server with file watching)
+api.build.stop(dir)                     // stops the dev server
+```
+
+### Scaffold options
+
+```ts
+{ name?: string, url?: string, language?: string }
+```
+
+Scaffold creates: `site.json`, `DOMAIN.md`, `PERSONA.md`, all templates,
+`content/index.md`, `content/about.md`, assets, and data.
+
+Templates written by scaffold:
+
+| Template | Notes |
+|----------|-------|
+| `base.html` | Top-level shell |
+| `page.html` | Standard page |
+| `post.html` | Blog/article |
+| `nav.html` | Navigation partial |
+| `footer.html` | Footer partial |
+| `faq.html` | Building block — Schema.org JSON-LD injected automatically |
+| `breadcrumb.html` | Building block — Schema.org JSON-LD injected automatically |
+| `table.html` | Building block — Schema.org JSON-LD injected automatically |
+
+---
+
+## Error handling
+
+```ts
+import { isSiteError } from '@ghostpaw/website';
 
 try {
-  write.divide(db, 10, 0);
-} catch (error) {
-  if (error instanceof CalcValidationError) {
-    console.error('Division by zero:', error.message);
+  await api.read.getPage(dir, path);
+} catch (err) {
+  if (isSiteError(err)) {
+    console.error(err.code);   // SiteErrorCode union
   }
 }
 ```
 
-## Human Operating Loop
+---
 
-1. Call `initCalcTables(db)` once at startup.
-2. Use `write.*` to perform computations.
-3. Use `read.listHistory` to audit or display results.
-4. Use `read.getLastResult` to chain operations on previous output.
-5. Use `write.clearHistory` for cleanup when the session is over.
+## Typical workflow
+
+1. **Scaffold** — `api.build.scaffold(dir, opts)` to create the site skeleton
+2. **Edit content** — write or update pages with `api.write.writePage`
+3. **Check fitness** — `api.read.fitness(dir)` to surface issues across all dimensions
+4. **Fix issues** — use `api.write` calls targeting the `fix` pointers in each issue
+5. **Build** — `api.build.build(dir)` to produce the `dist/` output
+6. **Preview** — `api.build.serve(dir)` to spin up the dev server locally
