@@ -1,16 +1,15 @@
 # @ghostpaw/website — Developer Reference
 
-This document is for human operators and developers using this package directly
-in code. If you are wiring it into an LLM agent, read [LLM.md](LLM.md) instead.
+This document is for human operators and developers using this package directly in code. If you are wiring it into an LLM agent, read [LLM.md](LLM.md) instead.
 
 ## Requirements
 
-- Node 22+
+- Node.js 24+
 - No database, no framework — everything is files on disk
 
 ## Installation
 
-```sh
+```bash
 npm install @ghostpaw/website
 ```
 
@@ -20,15 +19,13 @@ npm install @ghostpaw/website
 import { api, buildSite, scaffold, SiteError, isSiteError } from '@ghostpaw/website';
 ```
 
-All runtime functionality flows through three namespaces: `api.read`, `api.write`,
-and `api.build`. Every function takes `dir: string` as its first argument — the
-root of your site on disk.
+All runtime functionality flows through three namespaces: `api.read`, `api.write`, and `api.build`. Every function takes `dir: string` as its first argument — the root of your site on disk.
 
 ---
 
 ## api.read
 
-All functions are async.
+All functions are async. None have side effects.
 
 ### Pages
 
@@ -38,6 +35,18 @@ api.read.getPage(dir, path)          // → PageDetail  (includes rendered HTML)
 ```
 
 `filter` accepts `{ tag?, template?, slug? }`. `slug` is matched as a pattern.
+
+`PageSummary` shape:
+
+```ts
+{
+  url: string,
+  slug: string,
+  collection: string | null,
+  frontmatter: PageFrontmatter,
+  wordCount: number,
+}
+```
 
 ### Templates
 
@@ -60,6 +69,8 @@ api.read.listData(dir)               // → DataSummary[]
 api.read.getData(dir, name)          // → unknown  (parsed JSON)
 ```
 
+`name` is the bare filename without `.json` extension.
+
 ### Site config and identity
 
 ```ts
@@ -69,42 +80,56 @@ api.read.getPersona(dir)             // → string  (PERSONA.md content)
 api.read.getStructure(dir)           // → SiteStructure  (URL tree with parent/child relationships)
 ```
 
+`SiteConfig` shape:
+
+```ts
+{
+  name: string,
+  url: string,
+  language: string,
+  author?: string,
+}
+```
+
 ### Fitness
 
 ```ts
 api.read.fitness(dir, opts?)         // → FitnessReport
-api.read.fitnessPage(dir, path)      // → PageScore  (Tier 1 + Tier 3 only)
+api.read.fitnessPage(dir, path)      // → PageScore
 api.read.fitnessHistory(dir)         // → FitnessHistoryEntry[]
 ```
 
-`opts` accepts `{ dimensions?: string[], searchConsole? }`.
+`opts` accepts `{ dimensions?: string[], searchConsole?: GscData }`.
 
-#### FitnessReport shape
+`FitnessReport` shape:
 
 ```ts
 {
-  overall: number,
+  overallScore: number,              // 0–100
   timestamp: string,
   dimensions: Record<string, DimensionScore>,
-  pages: Record<string, PageScore>,
-  cannibalization: CannibalizationPair[]
+  topIssues: Issue[],
+  weakestPages: PageScore[],
+  cannibalization: CannibalizationPair[],
 }
 ```
 
-Each issue carries:
+Each `Issue` carries:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `severity` | `'error' \| 'warning' \| 'info'` | |
-| `dimension` | `string` | |
-| `code` | `string` | Stable identifier |
+| `severity` | `'error' \| 'warning' \| 'info'` | Errors block production launch |
+| `dimension` | `string` | Analyzer that raised the issue |
+| `code` | `string` | Stable machine-readable identifier |
 | `message` | `string` | Human-readable description |
-| `page` | `string` | Affected page path |
-| `fix` | `{ file, action, field }` | Actionable pointer to the exact change needed |
+| `page` | `string` | Affected page URL |
+| `fix` | `{ file, action, field? }` | Actionable pointer to the exact change needed |
 
 ---
 
 ## api.write
+
+All functions are async and mutate disk. They are idempotent — calling the same write twice produces the same result.
 
 ### Pages
 
@@ -113,7 +138,7 @@ api.write.writePage(dir, path, frontmatter, markdown)
 api.write.deletePage(dir, path)
 ```
 
-`path` is relative to `content/`.
+`path` is relative to `content/` (e.g. `'blog/my-post.md'`). Frontmatter is a plain object; all fields are optional except `title` and `layout`.
 
 ### Templates
 
@@ -129,12 +154,16 @@ api.write.writeAsset(dir, path, content)
 api.write.deleteAsset(dir, path)
 ```
 
+`path` is relative to `assets/` (e.g. `'css/styles.css'`).
+
 ### Data
 
 ```ts
 api.write.writeData(dir, name, json)
 api.write.deleteData(dir, name)
 ```
+
+`name` is the bare filename without `.json` extension. The file is written to `data/{name}.json`.
 
 ### Site config and identity
 
@@ -148,48 +177,68 @@ api.write.writePersona(dir, content)    // replaces PERSONA.md
 
 ## api.build
 
-```ts
-api.build.build(dir, opts?)             // → BuildResult  (copies assets, renders all pages, writes to dist/)
-api.build.scaffold(dir, opts?)          // creates full site skeleton on disk
-api.build.preview(dir, path)            // → RenderedPage  (renders one page without writing to dist/)
-api.build.serve(dir, opts?)             // → ServeInstance  (dev server with file watching)
-api.build.stop(dir)                     // stops the dev server
-```
-
-### Scaffold options
+### Build
 
 ```ts
-{ name?: string, url?: string, language?: string }
+api.build.build(dir, opts?)
+// → { pageCount: number, assetCount: number, duration: number }
 ```
 
-Scaffold creates: `site.json`, `DOMAIN.md`, `PERSONA.md`, all templates,
-`content/index.md`, `content/about.md`, assets, and data.
+Discovers all pages, renders them via the template system, copies assets to `dist/`, and writes `sitemap.xml` and `robots.txt`.
 
-Templates written by scaffold:
+### Scaffold
 
-| Template | Notes |
-|----------|-------|
-| `base.html` | Top-level shell |
-| `page.html` | Standard page |
-| `post.html` | Blog/article |
-| `nav.html` | Navigation partial |
-| `footer.html` | Footer partial |
-| `faq.html` | Building block — Schema.org JSON-LD injected automatically |
-| `breadcrumb.html` | Building block — Schema.org JSON-LD injected automatically |
-| `table.html` | Building block — Schema.org JSON-LD injected automatically |
+```ts
+api.build.scaffold(dir, opts?)
+// opts: { name?: string, url?: string, language?: string }
+```
+
+Creates the full site skeleton on disk. Idempotent — existing files are not overwritten. Writes:
+
+| File | Notes |
+|------|-------|
+| `site.json` | Site configuration |
+| `DOMAIN.md` | Domain knowledge context |
+| `PERSONA.md` | Site voice and audience definition |
+| `templates/base.html` | Top-level shell |
+| `templates/page.html` | Standard page layout |
+| `templates/post.html` | Blog/article layout |
+| `templates/blog.html` | Collection listing layout |
+| `templates/nav.html` | Navigation partial |
+| `templates/footer.html` | Footer partial |
+| `templates/faq.html` | FAQ building block (Schema.org auto-injected) |
+| `templates/breadcrumb.html` | Breadcrumb partial (Schema.org auto-injected) |
+| `templates/table.html` | Table building block (Schema.org-ready) |
+| `assets/css/style.css` | Minimal base stylesheet |
+| `assets/robots.txt` | Permissive robots.txt with sitemap reference |
+| `assets/favicon.svg` | Placeholder favicon |
+| `data/nav.json` | Navigation data |
+| `content/index.md` | Homepage |
+| `content/about.md` | About page |
+
+### Preview and dev server
+
+```ts
+api.build.preview(dir, path)         // → RenderedPage  (renders one page without writing to dist/)
+api.build.serve(dir, opts?)          // → ServeInstance  (dev server with file watching)
+api.build.stop(dir)                  // stops the dev server
+api.build.clean(dir)                 // deletes dist/
+```
 
 ---
 
 ## Error handling
 
+All `api.read` functions throw on missing resources. All `api.write` functions create missing parent directories automatically.
+
 ```ts
 import { isSiteError } from '@ghostpaw/website';
 
 try {
-  await api.read.getPage(dir, path);
+  await api.read.getPage(dir, '/nonexistent/');
 } catch (err) {
   if (isSiteError(err)) {
-    console.error(err.code);   // SiteErrorCode union
+    console.error(err.code);   // 'not_found' | 'parse_error' | 'build_error' | ...
   }
 }
 ```
@@ -198,9 +247,10 @@ try {
 
 ## Typical workflow
 
-1. **Scaffold** — `api.build.scaffold(dir, opts)` to create the site skeleton
-2. **Edit content** — write or update pages with `api.write.writePage`
-3. **Check fitness** — `api.read.fitness(dir)` to surface issues across all dimensions
-4. **Fix issues** — use `api.write` calls targeting the `fix` pointers in each issue
-5. **Build** — `api.build.build(dir)` to produce the `dist/` output
-6. **Preview** — `api.build.serve(dir)` to spin up the dev server locally
+1. **Scaffold** — `scaffold(dir, opts)` to create the site skeleton.
+2. **Edit content** — write pages with `api.write.writePage`, templates with `api.write.writeTemplate`.
+3. **Build** — `buildSite(dir)` to produce the `dist/` output.
+4. **Check fitness** — `api.read.fitness(dir)` to surface issues across all dimensions.
+5. **Fix issues** — use `api.write` calls targeting the `fix` pointers in each issue.
+6. **Preview** — `api.build.serve(dir)` to spin up the dev server locally.
+7. **Repeat** — keep the fix → rebuild → check loop until all errors are resolved.

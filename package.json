@@ -1,7 +1,7 @@
 {
 	"name": "@ghostpaw/website",
 	"version": "0.1.0",
-	"description": "LLM-first lean static site builder with fitness-checked builds",
+	"description": "Lean static site builder for Node.js — 19-analyzer fitness system, LLM-native tooling, zero-config Schema.org, one runtime dependency.",
 	"type": "module",
 	"exports": {
 		".": {
@@ -49,12 +49,23 @@
 		"ssg",
 		"seo",
 		"geo",
+		"geo-optimization",
 		"fitness",
+		"fitness-analyzer",
+		"schema-org",
+		"json-ld",
+		"content-quality",
 		"llm",
-		"ai",
+		"llm-tools",
+		"ai-agent",
 		"agent",
 		"tools",
-		"typescript"
+		"skills",
+		"handlebars",
+		"markdown",
+		"local-first",
+		"typescript",
+		"ghostpaw"
 	],
 	"license": "MIT",
 	"repository": {
