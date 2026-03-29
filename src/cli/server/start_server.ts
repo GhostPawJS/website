@@ -83,7 +83,10 @@ export interface StartServerOptions {
  *
  * Registers SIGTERM + SIGINT handlers for graceful shutdown.
  */
-export async function startServer(distDir: string, options: StartServerOptions = {}): Promise<never> {
+export async function startServer(
+	distDir: string,
+	options: StartServerOptions = {},
+): Promise<never> {
 	const port = options.port ?? (Number(process.env.PORT) || 3000);
 	const timeout = options.timeout ?? 30_000;
 
@@ -99,7 +102,9 @@ export async function startServer(distDir: string, options: StartServerOptions =
 					const ip = options.trustProxy
 						? (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
 						: req.socket.remoteAddress;
-					process.stdout.write(`${new Date().toISOString()} ${ip ?? '-'} ${req.method} ${req.url} ${status} ${ms}ms\n`);
+					process.stdout.write(
+						`${new Date().toISOString()} ${ip ?? '-'} ${req.method} ${req.url} ${status} ${ms}ms\n`,
+					);
 				}
 			})
 			.catch((err) => {
@@ -297,5 +302,5 @@ async function respond404(
  */
 function isHashedAsset(filename: string): boolean {
 	// Six+ hex chars before the extension (dot-separated or dash-separated)
-	return /[.\-][a-f0-9]{6,}\.[a-z0-9]+$/i.test(filename);
+	return /[.-][a-f0-9]{6,}\.[a-z0-9]+$/i.test(filename);
 }

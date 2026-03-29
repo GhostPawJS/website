@@ -1,8 +1,8 @@
-import { defineCommand } from 'citty';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { defineCommand } from 'citty';
 import { requireProject } from '../detect.ts';
-import { c, fatal } from '../output.ts';
+import { c } from '../output.ts';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,13 +32,14 @@ function setNestedKey(obj: Record<string, unknown>, dotPath: string, value: unkn
 	const keys = dotPath.split('.');
 	let current = obj;
 	for (let i = 0; i < keys.length - 1; i++) {
-		const key = keys[i]!;
+		const key = keys[i] as string;
 		if (typeof current[key] !== 'object' || current[key] === null) {
 			current[key] = {};
 		}
 		current = current[key] as Record<string, unknown>;
 	}
-	current[keys.at(-1)!] = value;
+	const lastKey = keys[keys.length - 1] as string;
+	current[lastKey] = value;
 }
 
 /** Parse a CLI value string: try JSON, fall back to plain string. */
@@ -102,7 +103,9 @@ const setCommand = defineCommand({
 
 		console.log('');
 		console.log(`  ${c.dim('site.json updated')}`);
-		console.log(`  ${args.key}:  ${c.dim(JSON.stringify(before))}  →  ${c.green(JSON.stringify(parsed))}`);
+		console.log(
+			`  ${args.key}:  ${c.dim(JSON.stringify(before))}  →  ${c.green(JSON.stringify(parsed))}`,
+		);
 		console.log('');
 	},
 });

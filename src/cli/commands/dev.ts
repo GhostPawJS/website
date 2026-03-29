@@ -32,7 +32,9 @@ export default defineCommand({
 				onRebuild: (result) => {
 					const time = timestamp();
 					const pages = result.pages.length + result.skipped;
-					console.log(`  ${c.dim(time)}  rebuilt ${c.dim(fmtMs(result.duration))} · ${pages} pages`);
+					console.log(
+						`  ${c.dim(time)}  rebuilt ${c.dim(fmtMs(result.duration))} · ${pages} pages`,
+					);
 				},
 				onError: (err) => {
 					const time = timestamp();
@@ -54,8 +56,9 @@ export default defineCommand({
 		}
 
 		// Ready banner
-		const issueCount = Object.values(report.dimensions).flatMap((d) => d.issues).filter((i) => i.severity !== 'info')
-			.length;
+		const issueCount = Object.values(report.dimensions)
+			.flatMap((d) => d.issues)
+			.filter((i) => i.severity !== 'info').length;
 		const scoreStr = `${report.overall}/100`;
 		const issueStr =
 			issueCount > 0
@@ -73,9 +76,7 @@ export default defineCommand({
 
 		if (args.open) {
 			// Lazy-require open — not a hard dep
-			import('node:child_process')
-				.then(({ exec }) => exec(`open ${instance.url}`))
-				.catch(() => {});
+			import('node:child_process').then(({ exec }) => exec(`open ${instance.url}`)).catch(() => {});
 		}
 
 		// Graceful shutdown on Ctrl+C

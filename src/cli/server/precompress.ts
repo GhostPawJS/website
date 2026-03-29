@@ -1,5 +1,5 @@
 import { createReadStream, createWriteStream } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { createGzip } from 'node:zlib';
@@ -35,8 +35,9 @@ export async function precompress(distDir: string): Promise<number> {
 	const stack = [distDir];
 
 	while (stack.length > 0) {
+		// biome-ignore lint/style/noNonNullAssertion: guarded by length check above
 		const dir = stack.pop()!;
-		let entries: Awaited<ReturnType<typeof readdir>>;
+		let entries: import('node:fs').Dirent<string>[];
 		try {
 			entries = await readdir(dir, { withFileTypes: true });
 		} catch {
@@ -51,7 +52,11 @@ export async function precompress(distDir: string): Promise<number> {
 				const ext = extname(entry.name).toLowerCase();
 				if (!COMPRESSIBLE.has(ext)) continue;
 				try {
-					await pipeline(createReadStream(abs), createGzip({ level: 9 }), createWriteStream(`${abs}.gz`));
+					await pipeline(
+						createReadStream(abs),
+						createGzip({ level: 9 }),
+						createWriteStream(`${abs}.gz`),
+					);
 					count++;
 				} catch {
 					// non-fatal — skip this file

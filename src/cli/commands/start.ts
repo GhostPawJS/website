@@ -32,7 +32,7 @@ export default defineCommand({
 	async run({ args }) {
 		const cwd = await requireProject();
 		const { dist } = resolvePaths(cwd);
-		const port = args.port ? parseInt(args.port, 10) : (Number(process.env.PORT) || 3000);
+		const port = args.port ? parseInt(args.port, 10) : Number(process.env.PORT) || 3000;
 		const config = await import('../../api/index.ts').then((m) => m.read.getConfig(cwd));
 
 		console.log('');

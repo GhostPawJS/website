@@ -1,6 +1,6 @@
-import { defineCommand } from 'citty';
 import { access, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { defineCommand } from 'citty';
 import { requireProject } from '../detect.ts';
 import { c } from '../output.ts';
 
@@ -78,7 +78,7 @@ const DOCKERIGNORE = `node_modules
 // Helper
 // ---------------------------------------------------------------------------
 
-async function writeIfAbsent(filePath: string, content: string, label: string): Promise<boolean> {
+async function writeIfAbsent(filePath: string, content: string, _label: string): Promise<boolean> {
 	try {
 		await access(filePath);
 		return false; // already exists
@@ -102,8 +102,16 @@ export default defineCommand({
 			default: false,
 		},
 		netlify: { type: 'boolean', description: 'Write netlify.toml for Netlify', default: false },
-		cloudflare: { type: 'boolean', description: 'Print Cloudflare Pages setup instructions', default: false },
-		docker: { type: 'boolean', description: 'Write Dockerfile + .dockerignore for self-hosting', default: false },
+		cloudflare: {
+			type: 'boolean',
+			description: 'Print Cloudflare Pages setup instructions',
+			default: false,
+		},
+		docker: {
+			type: 'boolean',
+			description: 'Write Dockerfile + .dockerignore for self-hosting',
+			default: false,
+		},
 	},
 	async run({ args }) {
 		const cwd = await requireProject();
@@ -114,7 +122,9 @@ export default defineCommand({
 			console.log('');
 			console.log(`  ${c.bold('website deploy')} — choose a deployment target:`);
 			console.log('');
-			console.log(`  ${c.cyan('--github-pages')}   GitHub Actions → GitHub Pages (free static hosting)`);
+			console.log(
+				`  ${c.cyan('--github-pages')}   GitHub Actions → GitHub Pages (free static hosting)`,
+			);
 			console.log(`  ${c.cyan('--netlify')}        Netlify (free tier, fast CDN)`);
 			console.log(`  ${c.cyan('--cloudflare')}     Cloudflare Pages (free tier, global edge)`);
 			console.log(`  ${c.cyan('--docker')}         Dockerfile for self-hosted Node server`);
@@ -132,7 +142,9 @@ export default defineCommand({
 				console.log(`  ${c.dim('Push to main, then enable Pages in your repo:')}`);
 				console.log(`  ${c.dim('Settings → Pages → Source: GitHub Actions')}`);
 			} else {
-				console.log(`  ${c.dim('Skipped')}  .github/workflows/pages.yml ${c.dim('(already exists)')}`);
+				console.log(
+					`  ${c.dim('Skipped')}  .github/workflows/pages.yml ${c.dim('(already exists)')}`,
+				);
 			}
 			console.log('');
 		}
@@ -163,7 +175,11 @@ export default defineCommand({
 
 		if (args.docker) {
 			const dfWritten = await writeIfAbsent(join(cwd, 'Dockerfile'), DOCKERFILE, 'Dockerfile');
-			const diWritten = await writeIfAbsent(join(cwd, '.dockerignore'), DOCKERIGNORE, '.dockerignore');
+			const diWritten = await writeIfAbsent(
+				join(cwd, '.dockerignore'),
+				DOCKERIGNORE,
+				'.dockerignore',
+			);
 
 			if (dfWritten) console.log(`  ${c.green('Created')}  Dockerfile`);
 			else console.log(`  ${c.dim('Skipped')}  Dockerfile ${c.dim('(already exists)')}`);
@@ -175,7 +191,9 @@ export default defineCommand({
 			console.log(`  ${c.dim('Build and run:')}`);
 			console.log(`  docker build -t my-site . && docker run -p 3000:3000 my-site`);
 			console.log('');
-			console.log(`  ${c.dim('Note: @ghostpaw/website must be in dependencies (not devDependencies) for Docker.')}`);
+			console.log(
+				`  ${c.dim('Note: @ghostpaw/website must be in dependencies (not devDependencies) for Docker.')}`,
+			);
 			console.log(`  Run: ${c.cyan('npm install @ghostpaw/website --save')}`);
 			console.log('');
 		}

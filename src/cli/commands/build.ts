@@ -1,5 +1,4 @@
 import { defineCommand } from 'citty';
-import { join } from 'node:path';
 import * as api from '../../api/index.ts';
 import { resolvePaths } from '../../project/paths.ts';
 import { requireProject } from '../detect.ts';
@@ -14,7 +13,11 @@ export default defineCommand({
 			description: 'Exit 1 if fitness score is below this value (for CI)',
 			default: '',
 		},
-		json: { type: 'boolean', description: 'Output raw JSON (BuildResult + FitnessReport)', default: false },
+		json: {
+			type: 'boolean',
+			description: 'Output raw JSON (BuildResult + FitnessReport)',
+			default: false,
+		},
 	},
 	async run({ args }) {
 		const cwd = await requireProject();
@@ -50,9 +53,13 @@ export default defineCommand({
 		const shown = dims.slice(0, 5);
 		for (const [id, dim] of shown) {
 			const issues = dim.issues.filter((i) => i.severity !== 'info');
-			const tag = issues.length > 0 ? c.dim(`  ← ${issues.length} issue${issues.length > 1 ? 's' : ''}`) : '';
-			const connector = shown.indexOf([id, dim] as (typeof shown)[number]) === shown.length - 1 ? '└──' : '├──';
-			console.log(`  ${c.dim(connector)} ${id.padEnd(22)} ${scoreColor(dim.score, String(dim.score))}${tag}`);
+			const tag =
+				issues.length > 0 ? c.dim(`  ← ${issues.length} issue${issues.length > 1 ? 's' : ''}`) : '';
+			const connector =
+				shown.indexOf([id, dim] as (typeof shown)[number]) === shown.length - 1 ? '└──' : '├──';
+			console.log(
+				`  ${c.dim(connector)} ${id.padEnd(22)} ${scoreColor(dim.score, String(dim.score))}${tag}`,
+			);
 		}
 		if (dims.length > 5) {
 			const rest = dims.length - 5;
@@ -66,7 +73,9 @@ export default defineCommand({
 		// CI threshold exit code
 		const threshold = args.threshold ? parseInt(args.threshold, 10) : null;
 		if (threshold !== null && !isNaN(threshold) && report.overall < threshold) {
-			console.error(c.red(`  Fitness ${report.overall} is below threshold ${threshold}. Failing build.`));
+			console.error(
+				c.red(`  Fitness ${report.overall} is below threshold ${threshold}. Failing build.`),
+			);
 			process.exit(1);
 		}
 	},

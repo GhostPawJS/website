@@ -1,6 +1,6 @@
-import { defineCommand } from 'citty';
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
+import { defineCommand } from 'citty';
 import * as api from '../../api/index.ts';
 import { resolvePaths } from '../../project/paths.ts';
 import { requireProject } from '../detect.ts';
@@ -13,9 +13,7 @@ import { c, fatal } from '../output.ts';
 /** Convert a file slug to a human-readable title. */
 function slugToTitle(slug: string): string {
 	const last = slug.split('/').at(-1) ?? slug;
-	return last
-		.replace(/[-_]+/g, ' ')
-		.replace(/\b\w/g, (ch) => ch.toUpperCase());
+	return last.replace(/[-_]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
 
 function today(): string {
@@ -27,7 +25,9 @@ async function guardNoOverwrite(cwd: string, path: string): Promise<void> {
 	const absPath = join(content, path.endsWith('.md') ? path : `${path}.md`);
 	try {
 		await access(absPath);
-		fatal(`File already exists: content/${path}.md\n\n  Use a different slug, or edit the file directly.`);
+		fatal(
+			`File already exists: content/${path}.md\n\n  Use a different slug, or edit the file directly.`,
+		);
 	} catch {
 		// doesn't exist — good
 	}

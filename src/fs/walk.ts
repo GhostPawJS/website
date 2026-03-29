@@ -25,6 +25,7 @@ export async function* walk(
 ): AsyncGenerator<WalkEntry> {
 	const stack: string[] = [root];
 	while (stack.length > 0) {
+		// biome-ignore lint/style/noNonNullAssertion: guarded by length check above
 		const dir = stack.pop()!;
 		const entries = await readdir(dir, { withFileTypes: true });
 		for (const dirent of entries) {

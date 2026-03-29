@@ -24,7 +24,9 @@ export function formatFitnessReport(report: FitnessReport, siteName?: string): s
 					? c.yellow(`  ${warns} warning${warns > 1 ? 's' : ''}`)
 					: '';
 		const name = c.dim(id.padEnd(22));
-		lines.push(`  ${name}  ${scoreColor(dim.score, String(dim.score).padStart(3))}  ${bar(dim.score)}${tag}`);
+		lines.push(
+			`  ${name}  ${scoreColor(dim.score, String(dim.score).padStart(3))}  ${bar(dim.score)}${tag}`,
+		);
 	}
 
 	// Collect all non-info issues
@@ -41,7 +43,9 @@ export function formatFitnessReport(report: FitnessReport, siteName?: string): s
 	} else {
 		const counts = [
 			errors.length > 0 ? c.red(`${errors.length} error${errors.length !== 1 ? 's' : ''}`) : '',
-			warnings.length > 0 ? c.yellow(`${warnings.length} warning${warnings.length !== 1 ? 's' : ''}`) : '',
+			warnings.length > 0
+				? c.yellow(`${warnings.length} warning${warnings.length !== 1 ? 's' : ''}`)
+				: '',
 		]
 			.filter(Boolean)
 			.join(c.dim(' · '));
@@ -78,7 +82,9 @@ export function formatPageScore(score: PageScore): string {
 	lines.push(`  Score  ${scoreColor(score.score, `${score.score}/100`)}  ${bar(score.score)}`);
 	lines.push('');
 	lines.push(`  Words      ${score.wordCount}`);
-	lines.push(`  Readability  Flesch ${score.readability.fleschReadingEase.toFixed(0)} · FK Grade ${score.readability.fleschKincaidGrade.toFixed(1)}`);
+	lines.push(
+		`  Readability  Flesch ${score.readability.fleschReadingEase.toFixed(0)} · FK Grade ${score.readability.fleschKincaidGrade.toFixed(1)}`,
+	);
 	if (score.tfidfTopTerms.length > 0) {
 		lines.push(`  Top terms  ${score.tfidfTopTerms.slice(0, 8).join(', ')}`);
 	}
@@ -108,6 +114,7 @@ function describeFix(fix: FixSuggestion): string {
 	if (fix.action === 'update_content') return 'update the page content';
 	if (fix.action === 'update_template') return 'update the template file';
 	if (fix.action === 'merge_into') return fix.target ? `merge into ${fix.target}` : 'merge pages';
-	if (fix.action === 'redirect') return fix.target ? `redirect to ${fix.target}` : 'set up redirect';
+	if (fix.action === 'redirect')
+		return fix.target ? `redirect to ${fix.target}` : 'set up redirect';
 	return fix.action.replace(/_/g, ' ');
 }
