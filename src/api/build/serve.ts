@@ -90,8 +90,10 @@ export async function serve(dir: string, opts: ServeOptions = {}): Promise<Serve
 
 	const paths = resolvePaths(dir);
 
-	// Initial build
-	await build(dir);
+	// Initial build (skippable when caller does it separately for richer output)
+	if (!opts.skipInitialBuild) {
+		await build(dir);
+	}
 
 	const sseClients = new Set<ServerResponse>();
 
@@ -154,12 +156,15 @@ export async function serve(dir: string, opts: ServeOptions = {}): Promise<Serve
 
 				if (debounceTimer) clearTimeout(debounceTimer);
 				debounceTimer = setTimeout(() => {
-					build(dir, { skipClean: false })
-						.then(() => broadcastReload(sseClients))
-						.catch(() => {
-							/* rebuild errors are non-fatal for the server */
+					build(dir, { incremental: true })
+						.then((result) => {
+							broadcastReload(sseClients);
+							opts.onRebuild?.(result);
+						})
+						.catch((err) => {
+							opts.onError?.(err instanceof Error ? err : new Error(String(err)));
 						});
-				}, 300);
+				}, 150);
 			});
 		} catch {
 			// fs.watch may fail on some systems — server continues without livereload

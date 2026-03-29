@@ -18,8 +18,12 @@
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"bin": {
+		"website": "./dist/website.js"
+	},
 	"files": [
-		"dist"
+		"dist",
+		"SKILL.md"
 	],
 	"sideEffects": false,
 	"scripts": {
@@ -92,6 +96,7 @@
 		"node": "24.14.0"
 	},
 	"dependencies": {
+		"citty": "^0.2.1",
 		"marked": "^17.0.5"
 	},
 	"devDependencies": {

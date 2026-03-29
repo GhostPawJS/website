@@ -339,6 +339,12 @@ export interface ServeOptions {
 	open?: boolean;
 	/** Inject livereload. Default: true. */
 	livereload?: boolean;
+	/** Skip the initial build on startup (caller builds separately). */
+	skipInitialBuild?: boolean;
+	/** Called after each successful incremental rebuild. */
+	onRebuild?: (result: BuildResult) => void;
+	/** Called when a rebuild fails. */
+	onError?: (err: Error) => void;
 }
 
 export interface ServeInstance {
