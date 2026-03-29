@@ -3,62 +3,140 @@
 [![npm](https://img.shields.io/npm/v/@ghostpaw/website)](https://www.npmjs.com/package/@ghostpaw/website)
 [![node](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/@ghostpaw/website)](LICENSE)
-[![dependencies](https://img.shields.io/badge/runtime%20deps-1-brightgreen)](package.json)
+[![dependencies](https://img.shields.io/badge/runtime%20deps-2-brightgreen)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-A lean static site builder where the fitness system is the product. Nineteen analyzers across four tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk.
+A lean static site builder where the fitness system is the product. Nineteen analyzers across four tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk and one runtime dependency.
 
-## Install
+---
+
+## Quickstart
+
+```bash
+npx @ghostpaw/website init my-site
+cd my-site
+npm run dev
+```
+
+`http://localhost:3000` is live. The fitness report runs automatically. Edit files in `content/` and the browser reloads.
+
+---
+
+## CLI
+
+The `website` binary is the primary interface — for humans and agents alike. Every command runs from the project root (the directory containing `site.json`).
+
+```bash
+website init [dir]          # scaffold + first build + package.json scripts
+website dev                 # dev server with livereload, per-rebuild feedback
+website build               # full build to dist/, pre-compress assets, fitness summary
+website check               # 19-analyzer fitness report with actionable fixes
+website new page <slug>     # create a page with correct frontmatter
+website new post <slug>     # create a blog post with correct frontmatter
+website config get [key]    # read site.json or a specific dot-notation key
+website config set <key>    # update site.json safely
+website deploy              # generate GitHub Pages, Netlify, Cloudflare, or Docker config
+website start               # production HTTP server (security headers, gzip, ETag, clean URLs)
+```
+
+`--help` works on every command. `--json` on `check` and `build` emits raw structured output for piping.
+
+### Dev server
+
+```
+  Local:    http://localhost:3000
+  Project:  My Site · 6 pages
+  Fitness:  84/100 — 3 issues (run `website check`)
+
+  Watching content/, templates/, data/, assets/
+  12:34:01  rebuilt 28ms · 6 pages
+```
+
+File watching is incremental — only changed pages re-render. Templates or `site.json` changes trigger a full rebuild.
+
+### Production server
+
+`website start` serves `dist/` over Node's built-in HTTP with no external dependencies:
+
+- Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`)
+- Pre-compressed `.gz` serving without runtime CPU cost (`website build` writes them)
+- `Cache-Control: no-cache` + `ETag` for HTML; `immutable` for content-hashed assets
+- Clean URL redirects (`/about` → `/about/`) matching CDN behaviour
+- Path traversal guard, dotfile protection, graceful `SIGTERM`/`SIGINT` shutdown
+- `PORT` env var for containers; `--trust-proxy` for reverse-proxy deployments
+
+### Deployment
+
+```bash
+website deploy --github-pages   # writes .github/workflows/pages.yml
+website deploy --netlify         # writes netlify.toml
+website deploy --cloudflare      # prints Cloudflare Pages setup
+website deploy --docker          # writes Dockerfile + .dockerignore
+```
+
+Config generation only — no auth, no network calls.
+
+### CLI as an agent interface
+
+Every project created by `website init` includes a `SKILL.md` that explains the full CLI to any agent with shell access. Drop a `@ghostpaw/website` project into Claude Code, Cursor, or any agent that can run commands and read files, and it knows how to:
+
+- Audit the site and surface prioritised issues
+- Write new content that passes fitness checks on the first build
+- Fix cannibalization, schema gaps, and voice compliance issues
+- Rebuild and verify the score improved
+
+The `--json` flag on `check` and `build` returns the raw `FitnessReport` — ready to pipe directly into an LLM API call.
+
+See [docs/LLM.md](docs/LLM.md) for the full agent integration reference, including the library-level `tools`, `skills`, and `soul` namespaces for deeper harness integration.
+
+---
+
+## Library API
+
+For developers who need programmatic access:
 
 ```bash
 npm install @ghostpaw/website
 ```
 
-Requires **Node.js 24+**.
-
-## Core idea
-
-Every build produces a fitness report alongside the HTML. The score is not a grade — it is a prioritised list of specific things to fix: missing canonical URLs, thin content, broken internal links, Schema.org gaps, voice-search disqualifiers. Fix them, rebuild, and the score moves.
-
-The same system works for both humans writing code and LLM agents operating through tools.
-
-## Two audiences
-
-### Human developers
-
-Use the `api.read`, `api.write`, and `api.build` namespaces for direct programmatic access:
-
 ```ts
 import { scaffold, buildSite, api } from '@ghostpaw/website';
 
-// Bootstrap a working site
 await scaffold('./my-site', { name: 'Acme', url: 'https://acme.com' });
 
-// Build to dist/
 const result = await buildSite('./my-site');
-console.log(result.pages.length); // 7
+console.log(result.pages.length); // 6
 
-// Check fitness across all 19 analyzers
 const report = await api.read.fitness('./my-site');
-console.log(report.overall); // 85
+console.log(report.overall);      // 84
 ```
 
-See [docs/HUMAN.md](docs/HUMAN.md) for the full direct-API reference.
+Three namespaces — every function takes `dir: string` as its first argument:
 
-### LLM agents
+| Namespace | What it does |
+|-----------|-------------|
+| `api.read` | Inspect pages, templates, data, config, fitness — no side effects |
+| `api.write` | Create, update, or delete content, templates, data, assets |
+| `api.build` | Scaffold, build, preview, serve, clean |
 
-Use the `tools`, `skills`, and `soul` namespaces for the structured LLM runtime:
+See [docs/HUMAN.md](docs/HUMAN.md) for the full API reference.
+
+---
+
+## LLM integration
+
+For agent builders wiring the library into an LLM harness:
 
 ```ts
 import { tools, skills, soul } from '@ghostpaw/website';
 
-// Soul: inject into system prompt
+// Inject into system prompt
 const systemPrompt = soul.siteBuilderPersona.renderSoulPromptFoundation();
 
-// Tools: register with your LLM harness
+// Register with your harness
 const toolDefs = tools.TOOLS; // JSON Schema + call(dir, input) → ToolResult
 
-// Skills: inject into reasoning steps
+// Inject into reasoning steps
 const skill = skills.SKILLS.find(s => s.name === 'create-page-well');
 ```
 
@@ -71,17 +149,27 @@ Every tool returns a discriminated `ToolResult`:
 { status: 'error',               code: string, message: string }
 ```
 
+The core agent loop:
+
+```
+site_read → site_plan → site_write → site_check → repeat
+```
+
 See [docs/LLM.md](docs/LLM.md) for the full agent-builder reference.
+
+---
 
 ## Tools
 
 | Tool | What it does |
 |------|-------------|
-| `site_read` | Inspect pages, templates, data, config, and fitness reports — no side effects |
+| `site_read` | Inspect pages, templates, data, config, and fitness — no side effects |
 | `site_write` | Create, update, or delete content, templates, data, and assets |
 | `site_build` | Build, scaffold, preview, serve, or clean a site |
 | `site_check` | Run the fitness system and return prioritised issues with fix suggestions |
 | `site_plan` | Dry-run proposed changes and preview the fitness delta before writing |
+
+---
 
 ## Skills
 
@@ -95,69 +183,48 @@ See [docs/LLM.md](docs/LLM.md) for the full agent-builder reference.
 | `content-cannibalization` | Identifying and resolving keyword overlap across pages |
 | `search-console-workflow` | Ingesting GSC data to drive Tier 4 fitness analysis |
 
-## Core agent loop
-
-```
-site_read (understand) → site_plan (simulate) → site_write (apply) → site_check (verify)
-```
-
-Repeat until all errors are resolved and overall score meets the target (≥ 80 for launch, ≥ 90 for production excellence).
+---
 
 ## Fitness analyzers
 
 | Tier | Analyzers |
 |------|-----------|
 | **Tier 1** — always runs | `seo_meta`, `seo_structure`, `content_quality`, `images`, `links`, `social`, `sitemap_robots`, `technical` |
-| **Tier 2** — TF-IDF | `cannibalization`, `topical_clusters`, `content_tfidf` |
-| **Tier 3** — schema | `schema_validation`, `geo`, `eeat`, `local_seo`, `multilingual`, `voice_compliance` |
+| **Tier 2** — TF-IDF corpus | `cannibalization`, `topical_clusters`, `content_tfidf` |
+| **Tier 3** — schema-aware | `schema_validation`, `geo`, `eeat`, `local_seo`, `multilingual`, `voice_compliance` |
 | **Tier 4** — optional | `search_console` (requires GSC data) |
+
+Score targets: **≥ 80** to publish, **≥ 90** for production excellence.
 
 See [docs/entities/FITNESS.md](docs/entities/FITNESS.md) for the full analyzer reference.
 
+---
+
 ## Key properties
 
-- **Fitness-first.** Score and issues are first-class outputs, not afterthoughts.
-- **LLM-native.** Soul for posture, tools for actions, skills for workflow — designed for agentic use from day one.
-- **Zero-config Schema.org.** `faq.html`, `breadcrumb.html`, and `table.html` building-block templates auto-inject correct JSON-LD from frontmatter. No manual markup.
-- **Dry-run before write.** `site_plan` simulates any mutation and returns a fitness delta before a single file is touched.
-- **Everything is files.** `content/`, `templates/`, `assets/`, `data/`, `site.json` — no database, no admin UI, no hidden state.
-- **Resilient tool surface.** Missing `path` returns `needs_clarification`. `page:` and `url:` accepted as aliases for `path`. `.json` extension in data names stripped automatically.
-- **One runtime dependency.** Only `marked` — for Markdown rendering.
+- **Fitness-first.** Score and issues are first-class outputs. The HTML is the side effect.
+- **Dual-use CLI.** `website` is equally usable by humans and agents — same commands, `--json` for machine output.
+- **SKILL.md ships with every project.** Any agent with shell access can operate the site immediately.
+- **LLM-native library.** Soul for posture, tools for actions, skills for workflow — designed for agentic use from day one.
+- **Zero-config Schema.org.** `faq.html`, `breadcrumb.html`, and `table.html` auto-inject correct JSON-LD.
+- **Dry-run before write.** `site_plan` simulates any mutation and returns a fitness delta before a file is touched.
+- **Everything is files.** `content/`, `templates/`, `assets/`, `data/`, `site.json` — no database, no admin UI.
+- **Production-safe server.** `website start` is hardened: traversal guard, dotfile protection, security headers, gzip, graceful shutdown.
+- **Two runtime dependencies.** `marked` for Markdown rendering, `citty` for the CLI.
 
-## Package surface
-
-```ts
-import {
-  // Convenience re-exports
-  buildSite,
-  scaffold,
-
-  // Structured API namespaces
-  api,     // api.read  /  api.write  /  api.build
-
-  // LLM runtime
-  tools,   // TOOLS array  +  siteRead, siteWrite, siteBuild, siteCheck, sitePlan
-  skills,  // SKILLS array  +  7 named skills
-  soul,    // siteBuilderPersona  (renderSoulPromptFoundation())
-
-  // Types
-  type FitnessReport,
-  type PageScore,
-  type DryRunChange,
-  type GscData,
-  type SiteConfig,
-} from '@ghostpaw/website';
-```
+---
 
 ## Documentation
 
 | Document | Audience |
 |----------|---------|
-| [docs/HUMAN.md](docs/HUMAN.md) | Human developers using `api.read` / `api.write` / `api.build` directly |
-| [docs/LLM.md](docs/LLM.md) | Agent builders wiring `soul`, `tools`, and `skills` into an LLM harness |
+| [docs/HUMAN.md](docs/HUMAN.md) | CLI usage and direct `api.read` / `api.write` / `api.build` reference |
+| [docs/LLM.md](docs/LLM.md) | Agent integration: CLI via SKILL.md, and library `soul` / `tools` / `skills` |
 | [docs/entities/CONTENT.md](docs/entities/CONTENT.md) | Pages, frontmatter schema, collections, URL routing |
-| [docs/entities/TEMPLATES.md](docs/entities/TEMPLATES.md) | Handlebars templates, layouts, partials, auto-injected Schema.org |
+| [docs/entities/TEMPLATES.md](docs/entities/TEMPLATES.md) | Templates, layouts, partials, auto-injected Schema.org |
 | [docs/entities/FITNESS.md](docs/entities/FITNESS.md) | 19 fitness analyzers, scoring, issue format, history |
+
+---
 
 ## Development
 
@@ -166,7 +233,7 @@ npm install
 npm test            # node:test runner, no external framework
 npm run typecheck   # tsc --noEmit
 npm run lint        # biome check
-npm run build       # ESM + CJS + declarations via tsup
+npm run build       # ESM + CJS + declarations + CLI binary via tsup
 ```
 
 ### Support

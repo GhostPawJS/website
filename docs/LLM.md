@@ -1,6 +1,76 @@
-# @ghostpaw/website — Agent Builder Reference
+# @ghostpaw/website — Agent Integration Reference
 
-This document is for agent builders wiring `soul`, `tools`, and `skills` into an LLM harness. For the direct `api.read` / `api.write` / `api.build` surface, see [HUMAN.md](HUMAN.md).
+This document is for agent builders. Two integration paths are available — use either or both:
+
+| Path | When to use |
+|------|-------------|
+| **CLI via SKILL.md** | Agent already has shell access (Claude Code, Cursor, etc.). Fastest to wire up. |
+| **Library tools/skills/soul** | Building a custom harness (OpenAI function calling, LangChain, MCP server, etc.). Full control. |
+
+For the direct `api.read` / `api.write` / `api.build` surface used in code, see [HUMAN.md](HUMAN.md).
+
+---
+
+## Path 1 — CLI as agent interface
+
+Every `@ghostpaw/website` project ships with a `SKILL.md` at the project root. This file is the complete agent skill: command reference, `--json` output shapes, file ownership rules, the agentic loop, and fitness score targets — all in ~600 tokens.
+
+Any agent with shell access and file-read capability can operate a site immediately by reading `SKILL.md` once.
+
+### How it works
+
+```bash
+website check --json        # → FitnessReport (raw JSON)
+website build               # → build + pre-compress + fitness summary
+website new post blog/slug  # → create content/blog/slug.md with frontmatter
+website config set url https://acme.com
+```
+
+The `--json` flag on `check` and `build` returns structured data suitable for feeding directly into an LLM context or piping through `jq`.
+
+### The agent loop over the CLI
+
+```
+website check --json
+→ parse FitnessReport, identify errors and fix pointers
+→ edit content/*.md directly, or call website new / website config set
+website build
+website check --json
+→ verify score improved
+→ repeat until overall ≥ target
+```
+
+### Setting it up
+
+In Claude Code or any agent that reads a `CLAUDE.md` / `AGENT.md`:
+
+```markdown
+# Site management
+
+This project uses @ghostpaw/website. Read SKILL.md for the full CLI reference.
+All commands run from the project root (where site.json lives).
+```
+
+Or inject `SKILL.md` content directly into the system prompt:
+
+```ts
+import { readFile } from 'node:fs/promises';
+const skill = await readFile('SKILL.md', 'utf8');
+// Prepend to system prompt
+```
+
+### When to use this path
+
+- Agent already has shell + file access (no extra wiring needed)
+- You want the agent to work on an existing site without library integration
+- You want human-readable terminal output alongside machine-readable `--json`
+- You need the integration to work across multiple LLM providers without changing code
+
+---
+
+## Path 2 — Library tools, skills, and soul
+
+For custom harnesses where you control the LLM integration layer.
 
 ## Runtime stack
 
