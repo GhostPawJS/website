@@ -43,7 +43,7 @@ export const DEMO_STEPS: DemoStep[] = [
 		input: {
 			changes: [
 				{
-					action: 'write_page',
+					kind: 'write_page',
 					path: 'blog/rooftop-case-study.md',
 					frontmatter: {
 						title: 'Case Study: 80 kWp Rooftop Installation in Munich',
