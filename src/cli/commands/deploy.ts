@@ -14,7 +14,13 @@ on:
   push:
     branches: [main]
 
+# Cancel any in-progress deploy when a new push arrives
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 permissions:
+  contents: read
   pages: write
   id-token: write
 
@@ -43,6 +49,9 @@ const NETLIFY_TOML = `[build]
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  NODE_VERSION = "24"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -62,7 +71,7 @@ RUN npm run build
 FROM node:24-alpine AS runner
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 ENV PORT=3000
 EXPOSE 3000

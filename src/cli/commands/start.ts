@@ -1,7 +1,8 @@
+import { access } from 'node:fs/promises';
 import { defineCommand } from 'citty';
 import { resolvePaths } from '../../project/paths.ts';
 import { requireProject } from '../detect.ts';
-import { c } from '../output.ts';
+import { c, fatal } from '../output.ts';
 import { startServer } from '../server/start_server.ts';
 
 export default defineCommand({
@@ -33,13 +34,22 @@ export default defineCommand({
 		const cwd = await requireProject();
 		const { dist } = resolvePaths(cwd);
 		const port = args.port ? parseInt(args.port, 10) : Number(process.env.PORT) || 3000;
+
+		// Guard: dist/ must exist — catch the common mistake of running start before build
+		try {
+			await access(dist);
+		} catch {
+			fatal(`dist/ not found. Run ${c.cyan('npm run build')} first.`);
+		}
+
 		const config = await import('../../api/index.ts').then((m) => m.read.getConfig(cwd));
 
 		console.log('');
 		console.log(`  ${c.bold('@ghostpaw/website start')}`);
 		console.log('');
 		console.log(`  Serving  ${c.dim(dist)}`);
-		console.log(`  Address  ${c.cyan(`http://0.0.0.0:${port}`)}`);
+		console.log(`  Local    ${c.cyan(`http://localhost:${port}`)}`);
+		console.log(`  Network  ${c.dim(`http://0.0.0.0:${port}`)}`);
 		console.log(`  Project  ${c.dim(config.name)}`);
 		console.log('');
 		console.log(`  ${c.dim('Press Ctrl+C to stop')}`);
