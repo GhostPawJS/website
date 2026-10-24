@@ -6,7 +6,7 @@
 [![dependencies](https://img.shields.io/badge/runtime%20deps-2-brightgreen)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-A lean static site builder where the fitness system is the product. Nineteen analyzers across four tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk and one runtime dependency.
+A lean static site builder where the fitness system is the product. Nineteen analyzers across four tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk and two runtime dependencies.
 
 ---
 

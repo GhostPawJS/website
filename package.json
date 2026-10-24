@@ -1,7 +1,7 @@
 {
 	"name": "@ghostpaw/website",
 	"version": "0.4.2",
-	"description": "Lean static site builder for Node.js — 19-analyzer fitness system, LLM-native tooling, zero-config Schema.org, one runtime dependency.",
+	"description": "Lean static site builder for Node.js — 19-analyzer fitness system, LLM-native tooling, zero-config Schema.org, two runtime dependencies.",
 	"type": "module",
 	"exports": {
 		".": {
