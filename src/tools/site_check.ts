@@ -160,6 +160,7 @@ async function call(dir: string, input: SiteCheckInput): Promise<ToolResult<Chec
 // Export
 // ---------------------------------------------------------------------------
 
+/** @deprecated Use getWebsiteToolByName() and its handler instead. */
 export const siteCheck: ToolDef<SiteCheckInput, CheckSummary> = {
 	name: 'site_check',
 	description:

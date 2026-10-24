@@ -157,6 +157,7 @@ async function call(dir: string, input: SitePlanInput): Promise<ToolResult<PlanS
 // Export
 // ---------------------------------------------------------------------------
 
+/** @deprecated Use getWebsiteToolByName() and its handler instead. */
 export const sitePlan: ToolDef<SitePlanInput, PlanSummary> = {
 	name: 'site_plan',
 	description:

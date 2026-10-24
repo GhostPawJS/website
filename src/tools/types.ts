@@ -41,6 +41,7 @@ export interface ToolError {
 	message: string;
 }
 
+/** @deprecated Use WebsiteToolResult from the shared tool registry. */
 export type ToolResult<T = unknown> =
 	| ToolSuccess<T>
 	| ToolNoOp
@@ -63,7 +64,8 @@ export interface JsonSchema {
 }
 
 /**
- * Describes a callable tool for LLM function-calling / MCP registration.
+ * @deprecated Use WebsiteToolDefinition from the shared tool registry.
+ * Describes a callable tool for function registration.
  * The `call` signature accepts a plain object so schemas can be validated
  * externally before dispatch.
  *

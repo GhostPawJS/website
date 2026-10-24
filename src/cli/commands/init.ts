@@ -1,8 +1,8 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineCommand } from 'citty';
 import * as api from '../../api/index.ts';
+import { defineCommand } from '../command.ts';
 import { c, fatal, fmtMs } from '../output.ts';
 
 export default defineCommand({

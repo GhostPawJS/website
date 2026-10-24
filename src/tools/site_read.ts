@@ -181,6 +181,7 @@ async function call(dir: string, input: SiteReadInput): Promise<ToolResult> {
 // Export
 // ---------------------------------------------------------------------------
 
+/** @deprecated Use getWebsiteToolByName() and its handler instead. */
 export const siteRead: ToolDef<SiteReadInput> = {
 	name: 'site_read',
 	description:

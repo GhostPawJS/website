@@ -1,18 +1,8 @@
-import { marked } from 'marked';
+import { markdownToHtml } from './markdown/renderer.ts';
 
-// Configure marked once for the whole process.
-// gfm = GitHub-flavoured Markdown, breaks = false (default paragraph behaviour)
-marked.setOptions({ gfm: true });
-
-/**
- * Convert a Markdown string to HTML. Synchronous wrapper around `marked.parse`.
- * Returns an HTML string.
- */
+/** Convert Markdown to HTML synchronously. */
 export function renderMarkdown(markdown: string): string {
-	// marked.parse returns string | Promise<string> depending on async option;
-	// with default options it returns string.
-	const result = marked.parse(markdown) as string;
-	return result;
+	return markdownToHtml(markdown);
 }
 
 /**

@@ -1,6 +1,6 @@
-import { defineCommand } from 'citty';
 import * as api from '../../api/index.ts';
 import { resolvePaths } from '../../project/paths.ts';
+import { defineCommand } from '../command.ts';
 import { requireProject } from '../detect.ts';
 import { c, fmtMs, scoreColor } from '../output.ts';
 import { precompress } from '../server/precompress.ts';
@@ -72,7 +72,7 @@ export default defineCommand({
 
 		// CI threshold exit code
 		const threshold = args.threshold ? parseInt(args.threshold, 10) : null;
-		if (threshold !== null && !isNaN(threshold) && report.overall < threshold) {
+		if (threshold !== null && !Number.isNaN(threshold) && report.overall < threshold) {
 			console.error(
 				c.red(`  Fitness ${report.overall} is below threshold ${threshold}. Failing build.`),
 			);

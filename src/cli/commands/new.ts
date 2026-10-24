@@ -1,8 +1,8 @@
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { defineCommand } from 'citty';
 import * as api from '../../api/index.ts';
 import { resolvePaths } from '../../project/paths.ts';
+import { defineCommand } from '../command.ts';
 import { requireProject } from '../detect.ts';
 import { c, fatal } from '../output.ts';
 

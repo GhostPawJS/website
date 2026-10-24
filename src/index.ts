@@ -21,6 +21,12 @@ export * as skills from './skills/index.ts';
 export * as soul from './soul/index.ts';
 export * as template from './template/index.ts';
 export * as tools from './tools/index.ts';
+export type { WebsiteToolDefinition, WebsiteToolResult } from './tools/tool_registry.ts';
+export {
+	getWebsiteToolByName,
+	listWebsiteToolDefinitions,
+	websiteTools,
+} from './tools/tool_registry.ts';
 // Shared types
 export type {
 	AssetDetail,

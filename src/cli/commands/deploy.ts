@@ -1,6 +1,6 @@
 import { access, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { defineCommand } from 'citty';
+import { defineCommand } from '../command.ts';
 import { requireProject } from '../detect.ts';
 import { c } from '../output.ts';
 

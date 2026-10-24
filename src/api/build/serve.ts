@@ -12,7 +12,7 @@
 
 import { type FSWatcher, watch } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import type { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { extname, join } from 'node:path';
 import { build } from '../../build/build.ts';
 import { SiteError } from '../../errors.ts';
@@ -81,6 +81,7 @@ const activeServers = new Map<string, ServerEntry>();
  * instance rather than starting a duplicate.
  */
 export async function serve(dir: string, opts: ServeOptions = {}): Promise<ServeInstance> {
+	const { createServer } = await import('node:http');
 	const existing = activeServers.get(dir);
 	if (existing) return existing.instance;
 

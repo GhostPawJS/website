@@ -1,4 +1,4 @@
-import { defineCommand, runMain } from 'citty';
+import { defineCommand, runMain } from './command.ts';
 import buildCmd from './commands/build.ts';
 import checkCmd from './commands/check.ts';
 import configCmd from './commands/config.ts';

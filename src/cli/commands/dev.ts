@@ -1,5 +1,5 @@
-import { defineCommand } from 'citty';
 import * as api from '../../api/index.ts';
+import { defineCommand } from '../command.ts';
 import { requireProject } from '../detect.ts';
 import { c, fmtMs, scoreColor } from '../output.ts';
 

@@ -113,6 +113,7 @@ async function call(dir: string, input: SiteBuildInput): Promise<ToolResult> {
 // Export
 // ---------------------------------------------------------------------------
 
+/** @deprecated Use getWebsiteToolByName() and its handler instead. */
 export const siteBuild: ToolDef<SiteBuildInput> = {
 	name: 'site_build',
 	description: 'Build the site to disk, preview a single page, run the dev server, or scaffold.',

@@ -1,7 +1,7 @@
 {
 	"name": "@ghostpaw/website",
 	"version": "0.4.2",
-	"description": "Lean static site builder for Node.js — 19-analyzer fitness system, LLM-native tooling, zero-config Schema.org, two runtime dependencies.",
+	"description": "Lean static site builder for Node.js — 19-analyzer fitness system, LLM-native tooling, zero-config Schema.org, zero runtime dependencies.",
 	"type": "module",
 	"exports": {
 		".": {
@@ -96,10 +96,6 @@
 	"volta": {
 		"node": "24.14.0"
 	},
-	"dependencies": {
-		"citty": "^0.2.1",
-		"marked": "^17.0.5"
-	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.4",
 		"@types/node": "^25.3.0",
@@ -110,6 +106,7 @@
 		"playwright": "^1.58.2",
 		"preact": "^10.29.0",
 		"tsup": "^8.4.0",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"marked": "^17.0.5"
 	}
 }

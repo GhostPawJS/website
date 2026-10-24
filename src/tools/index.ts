@@ -29,5 +29,8 @@ import { siteRead } from './site_read.ts';
 import { siteWrite } from './site_write.ts';
 import type { ToolDef } from './types.ts';
 
-/** All tools in registration order. Pass to an MCP server or function-calling adapter. */
+/** @deprecated Use websiteTools or listWebsiteToolDefinitions(). */
 export const TOOLS: readonly ToolDef[] = [siteRead, siteWrite, siteBuild, siteCheck, sitePlan];
+
+export type { WebsiteToolDefinition, WebsiteToolResult } from './tool_registry.ts';
+export { getWebsiteToolByName, listWebsiteToolDefinitions, websiteTools } from './tool_registry.ts';

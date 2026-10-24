@@ -202,6 +202,7 @@ async function call(dir: string, input: SiteWriteInput): Promise<ToolResult<void
 // Export
 // ---------------------------------------------------------------------------
 
+/** @deprecated Use getWebsiteToolByName() and its handler instead. */
 export const siteWrite: ToolDef<SiteWriteInput, void> = {
 	name: 'site_write',
 	description:

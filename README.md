@@ -3,10 +3,10 @@
 [![npm](https://img.shields.io/npm/v/@ghostpaw/website)](https://www.npmjs.com/package/@ghostpaw/website)
 [![node](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/@ghostpaw/website)](LICENSE)
-[![dependencies](https://img.shields.io/badge/runtime%20deps-2-brightgreen)](package.json)
+[![dependencies](https://img.shields.io/badge/runtime%20deps-0-brightgreen)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-A lean static site builder where the fitness system is the product. Nineteen analyzers across four tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk and two runtime dependencies.
+A lean static site builder where the fitness system is the product. Nineteen analyzers across four tiers, LLM-native tooling, and zero-config Schema.org — all driven by files on disk and zero runtime dependencies.
 
 ---
 
@@ -171,6 +171,35 @@ See [docs/LLM.md](docs/LLM.md) for the full agent-builder reference.
 
 ---
 
+
+### Tool definitions
+
+The shared tool facade is available from the package root and the `tools`
+namespace. Its five definitions preserve the existing names and input schemas:
+`site_read`, `site_write`, `site_build`, `site_check`, and `site_plan`.
+Each definition includes `description`, `whenToUse`, `whenNotToUse`, `inputSchema`,
+`readOnly`, and `sideEffects` (`none` or `writes_state`).
+Only `site_plan` is always read-only. Whole-site fitness actions in `site_read`
+and `site_check` append score history, so their shared definitions declare writes.
+
+```ts
+import { getWebsiteToolByName, listWebsiteToolDefinitions, websiteTools } from '@ghostpaw/website';
+
+const read = websiteTools[0];
+const result = await read.handler('./my-site', { action: 'get_config' });
+console.log(result.ok, result.outcome, result.summary, result.data);
+console.log(listWebsiteToolDefinitions().map(tool => tool.name));
+console.log(getWebsiteToolByName('site_read')?.name);
+```
+
+Handlers return `{ ok, outcome, summary, next?, data? }`. Outcomes are `success`,
+`no_op`, `needs_clarification`, or `error`. Clarifications include a next-step
+question; errors retain their original code and message in `error`.
+The existing `tools.TOOLS` and individual tool objects remain available with
+unchanged `call()` methods and `status` results, and are deprecated in favor of
+these definitions.
+
+
 ## Skills
 
 | Skill | What it guides |
@@ -210,7 +239,7 @@ See [docs/entities/FITNESS.md](docs/entities/FITNESS.md) for the full analyzer r
 - **Dry-run before write.** `site_plan` simulates any mutation and returns a fitness delta before a file is touched.
 - **Everything is files.** `content/`, `templates/`, `assets/`, `data/`, `site.json` — no database, no admin UI.
 - **Production-safe server.** `website start` is hardened: traversal guard, dotfile protection, security headers, gzip, graceful shutdown.
-- **Two runtime dependencies.** `marked` for Markdown rendering, `citty` for the CLI.
+- **Zero runtime dependencies.** Markdown rendering and CLI argument handling are implemented locally with Node.js built-ins.
 
 ---
 

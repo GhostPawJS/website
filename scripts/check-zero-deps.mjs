@@ -5,7 +5,7 @@
 // that is not a Node.js built-in. Run after `npm run build`.
 // Usage: node scripts/check-zero-deps.mjs [--allow name1,name2]
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { closeSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 
@@ -28,12 +28,24 @@ for (const field of ['bundleDependencies', 'bundledDependencies']) {
 }
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const [packed] = JSON.parse(
-	execFileSync(npm, ['pack', '--dry-run', '--json', '--ignore-scripts'], {
-		encoding: 'utf8',
-		stdio: ['ignore', 'pipe', 'ignore'],
-	}),
-);
+// Capture output in a regular file so verification also works in environments
+// that cannot capture child-process pipes. Keep scratch files inside the project.
+const scratch = mkdtempSync(join(process.cwd(), '.zero-deps-'));
+let packed;
+try {
+	const outputPath = join(scratch, 'pack.json');
+	const output = openSync(outputPath, 'w');
+	try {
+		execFileSync(npm, ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+			stdio: ['ignore', output, 'inherit'],
+		});
+	} finally {
+		closeSync(output);
+	}
+	[packed] = JSON.parse(readFileSync(outputPath, 'utf8'));
+} finally {
+	rmSync(scratch, { recursive: true, force: true });
+}
 const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
 const packageName = /^(?:node:)?(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*(?:\/[\w.@-]+)*$/;
 const specifier =

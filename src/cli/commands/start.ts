@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises';
-import { defineCommand } from 'citty';
 import { resolvePaths } from '../../project/paths.ts';
+import { defineCommand } from '../command.ts';
 import { requireProject } from '../detect.ts';
 import { c, fatal } from '../output.ts';
 import { startServer } from '../server/start_server.ts';
