@@ -1,5 +1,7 @@
 # @ghostpaw/website
 
+> **Archived.** This project is no longer maintained. For building sites, use [lfm](https://github.com/Anonyfox/lfm) instead.
+
 [![npm](https://img.shields.io/npm/v/@ghostpaw/website)](https://www.npmjs.com/package/@ghostpaw/website)
 [![node](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/@ghostpaw/website)](LICENSE)
